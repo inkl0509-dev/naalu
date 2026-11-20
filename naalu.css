@@ -74,3 +74,4 @@ body, input, button, select, textarea {
 label > span.dv, #rateValueLbl.dv { display: block; text-align: right; }
 .check:has(.dv) { flex-direction: row-reverse; justify-content: flex-start; text-align: right; }
 p.dv, h3.dv, .empty.dv { text-align: right; }
+#vRouteRow:has(.dv) { flex-direction: row-reverse; }

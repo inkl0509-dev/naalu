@@ -277,14 +277,69 @@ const DV = {
   islandsAuto: "މުދާ ސޭވްކުރުމުން އާ ރަށްތައް އަމިއްލައަށް އިތުރުވާނެއެވެ.",
   noneYet: "އަދި އެއްވެސް އެއްޗެއް ނެތް",
   logout: "ލޮގް އައުޓް",
+  locTitle: "ބޯޓު އޮތް ތަން",
+  locOff: "މި ފޯނުން ލޮކޭޝަން ހިއްސާއެއް ނުކުރެއެވެ",
+  addItem: "އައިޓަމެއް އިތުރުކުރައްވާ",
+  desc: "ތަފްސީލު",
+  descPh: "މިސާލަކަށް: ފޮށި ފުރައި ހެދުން، ހޮންޑާ ސައިކަލް",
+  mWeight: "ބަރުދަން", mPieces: "އަދަދު", mCbm: "ސީބީއެމް", mFixed: "ވަކި އަގެއް",
+  amount: "ޖުމްލަ އަގު (ރުފިޔާ)",
+  addToReceipt: "ރަސީދަށް އިތުރުކުރައްވާ",
+  weightKg: "ބަރުދަން (ކިލޯ)",
+  ratePerKg: "ކިލޯއަކަށް ޖެހޭ ރޭޓް",
+  priceEach: "ވަކި އައިޓަމެއްގެ އަގު",
+  length: "ދިގުމިން", width: "ފުޅާމިން", height: "އުސްމިން",
+  cm: "ސމ", inch: "އިންޗި", feet: "ފޫޓު", metre: "މީޓަރު",
+  ratePerCbm: "ސީބީއެމް އަކަށް ޖެހޭ ރޭޓް",
+  enterDims: "ދިގުމިން، ފުޅާމިން، އުސްމިން އަދި އަދަދު ލިޔުއްވާ",
+  unpaidHint: "މުދަލާ ހަވާލުވާއިރު ފައިސާ ދައްކާނީ ބަލައި އަންނަ ފަރާތުން.",
+  refPh: "ޓްރާންސްފަރ / ކާޑު ރިފަރެންސް (އިޚްތިޔާރީ)",
+  small: "ކުޑަ", medium: "މެދު", large: "ބޮޑު",
+  addSize: "ސައިޒެއް އިތުރުކުރައްވާ",
+  portalHead: "ކަސްޓަމަރުން މުދާ ޓްރެކްކުރާ ޕޭޖު",
+  portalInfo: "ކޮންމެ ރަސީދެއްގައި ވެސް ކަސްޓަމަރަށް ޓްރެކް ކުރެވޭނެ ލިންކެއް އޮންނާނެއެވެ. އަދި މި ޕޭޖު ހުޅުވުމަށްފަހު ރަސީދު ނަންބަރާއި ފޯނު ނަންބަރުގެ ފަހު 4 އަދަދު ޖަހައިގެން ވެސް ބެލޭނެއެވެ.",
+  portalShare: "ޓްރެކިންގ ޕޭޖު ވަޓްސްއެޕް މެދުވެރިކޮށް ހިއްސާކުރައްވާ",
+  fAll: "ހުރިހާ", fReceived: "ލިބިފައި", fLoaded: "ބޯޓުގައި", fDelivered: "ހަވާލުކުރެވިފައި",
+  noCargo: "އެއްވެސް ކާގޯއެއް ނުފެނުނު",
+  latest500: "މި ދައްކަނީ އެންމެ ފަހުގެ 500 ރަސީދެވެ. މީގެ ކުރީގެ ރަސީދުތައް ބެއްލެވުމަށް އެކައުންޓްސް ބޭނުންކުރައްވާ.",
+  allVoyages: "ހުރިހާ ދަތުރުތައް",
+  searchPh: "ނަން، ފޯނު، ރަށް، ނުވަތަ ރަސީދު ނަންބަރުން ހޯއްދަވާ",
+  byDate: "ތާރީޚުން", today: "މިއަދު", yesterday: "އިއްޔެ", days7: "7 ދުވަސް", thisMonth: "މި މަސް", custom: "ކަސްޓަމް",
+  totalBilled: "ޖުމްލަ ބިލްކުރެވުނު އަދަދު", receipts: "ރަސީދުތައް", carried: "އަރުވާފައި",
+  notPaidYet: "އަދި ފައިސާ ނުދައްކާ", gstInv: "އިންވޮއިސްތަކުގެ ޖީއެސްޓީ", expenses: "ޚަރަދުތައް",
+  profit: "ފައިދާ (ލިބުނު ފައިސާ − ޖީއެސްޓީ − ޚަރަދު)",
+  expPh: "މިސާލަކަށް: ތެޔޮ / ފަޅުވެރިން، ކެއުން",
+  add: "އިތުރުކުރައްވާ",
+  noExpenses: "އެއްވެސް ޚަރަދެއް ނެތް",
+  byIsland: "ރަށްރަށުން",
+  noCargoHere: "އަދި މިތަނުގައި އެއްވެސް ކާގޯއެއް ނެތް",
+  noReceipts: "އެއްވެސް ރަސީދެއް ނެތް",
+  vTitle: "އައު ދަތުރު",
+  vName: "ދަތުރުގެ ނަން / ނަންބަރު",
+  vDefault: "ދަތުރު {n}",
+  vFrom: "ފުރާ ތަން", vTo: "ދާ ތަން",
+  vFromPh: "މިސާލަކަށް: މާލެ", vToPh: "މިސާލަކަށް: ފުވައްމުލައް",
+  vDate: "ފުރާ ތާރީޚު",
+  vNote: "ފަޅުވެރިންގެ ފޯނުތަކުގައިވާ އައު މުދާ މި ދަތުރަށް އިތުރުކުރެވޭނެއެވެ.",
+  vStart: "ދަތުރު ފަށާ",
 };
 const EN = {
   otherItem: "＋ Other item", noItems: "No items yet", taxInvoice: "🧾 Tax invoice (GST {r}%)",
   noVoyage: "No voyage", priceKg: "Price per kg (MVR)", pricePiece: "Price per piece (MVR)",
   priceCbm: "Price per CBM (MVR)", addRate: "Add rate",
   noRates: "No rates yet. Examples: Box (per kg), Motorcycle (per piece), Furniture (per CBM), Container (by size).",
-  noneYet: "None yet",
+  noneYet: "None yet", vDefault: "Voyage {n}",
+  locOff: "Location not shared from this phone", addItem: "Add item",
+  ratePerKg: "Rate per kg", priceEach: "Price each", ratePerCbm: "Rate per CBM",
+  enterDims: "Enter length, width, height and pieces",
+  small: "Small", medium: "Medium", large: "Large", addSize: "Add size",
+  noCargo: "No cargo found", allVoyages: "All voyages",
+  totalBilled: "Total billed", receipts: "Receipts", carried: "Carried", cash: "Cash", transfer: "Transfer", card: "Card",
+  notPaidYet: "Not paid yet", gstInv: "GST on invoices", expenses: "Expenses",
+  profit: "Profit (received − GST − expenses)",
+  noExpenses: "No expenses", noCargoHere: "No cargo here yet", noReceipts: "No receipts",
 };
+const dvc = () => (LANG === "dv" ? "dv" : "");   // class for Dhivehi text in rendered HTML
 // Receipt footer suggestions (receipt text itself is chosen by the boat, not by phone language)
 const FOOTERS = ["Thank you for choosing us 🚤", "އަޅުގަނޑުމެން އިޚްތިޔާރު ކުރެއްވި ކަމަށްޓަކައި ޝުކުރިއްޔާ 🚤"];
 let LANG = "en";
@@ -306,6 +361,11 @@ function applyLang() {
   $("#langBtn").textContent = dv ? "EN" : "ދިވެހި";
   $("#langBtn").classList.toggle("dv", !dv);
   renderTaxLbl(); renderRateChips(); renderLines(); renderRateList(); renderVoyageSelects(); renderIslands();
+  renderCargoList();
+  $("#addSizeBtn").textContent = "+ " + t("addSize"); $("#addSizeBtn").classList.toggle("dv", dv);
+  if (G.watchId === null) locStatus(t("locOff"), false);
+  if (S.line) setLineMode(S.line.mode, true);
+  if (S.boatId && !$("#view-accounts").classList.contains("hidden")) loadAccounts();
   if (!S.editRateId) { $("#rateSave").textContent = "+ " + t("addRate"); $("#rateSave").classList.toggle("dv", dv); }
   $("#rateValueLbl").textContent = t(RATE_KEY[S.rateMode] || "priceKg");
   $("#rateValueLbl").classList.toggle("dv", dv);
@@ -331,7 +391,7 @@ function renderVoyageSelects() {
     open.map((v) => `<option value="${v.id}" ${v.id === cur ? "selected" : ""}>${esc(voyageLabel(v))}</option>`).join("");
   const all = S.voyages.map((v) => `<option value="${v.id}">${esc(voyageLabel(v))}${v.status === "closed" ? " (closed)" : ""}</option>`).join("");
   const cv = $("#cargoVoyageSel").value;
-  $("#cargoVoyageSel").innerHTML = `<option value="">🚢 All voyages</option>` + all;
+  $("#cargoVoyageSel").innerHTML = `<option value="">🚢 ${t("allVoyages")}</option>` + all;
   $("#cargoVoyageSel").value = voyageById(cv) ? cv : "";
   const av = S.acctVoyageId || cur || S.voyages[0]?.id || "";
   $("#acctVoyageSel").innerHTML = all || `<option value="">No voyages yet</option>`;
@@ -343,7 +403,7 @@ $("#voyageSel").addEventListener("change", () => {
   toast($("#voyageSel").value ? "Voyage selected for new cargo" : "No voyage selected");
 });
 $("#newVoyageBtn").addEventListener("click", () => {
-  $("#vName").value = `Voyage ${S.voyages.length + 1}`;
+  $("#vName").value = t("vDefault").replace("{n}", S.voyages.length + 1);
   $("#vFrom").value = S.boat.address || ""; $("#vTo").value = "";
   $("#vDate").value = toDateInput(new Date());
   openModal("#voyageModal");
@@ -394,7 +454,8 @@ const round3 = (n) => Math.round((Number(n) || 0) * 1000) / 1000;
 
 function openLine(line, index) {
   S.line = { ...line, index, origMode: line.mode, origRate: line.rate, unit: line.dims?.unit || "cm", size: line.size || "" };
-  $("#lineTitle").textContent = index >= 0 ? "Edit item" : "Add item";
+  $("#lineTitle").textContent = index >= 0 ? "Edit item" : t("addItem");
+  $("#lineTitle").classList.toggle("dv", index < 0 && LANG === "dv");
   $("#lDesc").value = line.desc || "";
   $("#lWeight").value = line.weight || "";
   $("#lPcs").value = line.qty || (line.mode === "fixed" ? "" : (index >= 0 ? line.qty : 1));
@@ -426,7 +487,8 @@ function setLineMode(mode, initial) {
   $("#lDimBox").classList.toggle("hidden", mode !== "cbm");
   $("#lCbmOut").classList.toggle("hidden", mode !== "cbm");
   $("#lSizeBox").classList.toggle("hidden", mode !== "size");
-  $("#lRateTxt").textContent = { kg: "Rate per kg", piece: "Price each", cbm: "Rate per CBM", size: "Price each" }[mode] || "Rate";
+  $("#lRateTxt").textContent = t({ kg: "ratePerKg", piece: "priceEach", cbm: "ratePerCbm", size: "priceEach" }[mode] || "Rate");
+  $("#lRateTxt").classList.toggle("dv", LANG === "dv");
   if (mode === "size") renderSizeButtons();
   calcLine();
 }
@@ -459,7 +521,8 @@ function calcLine() {
   if (L.mode === "kg") qty = Number($("#lWeight").value) || 0;
   else if (L.mode === "cbm") {
     const c = lineCbm(); qty = c.total;
-    $("#lCbmOut").textContent = c.total ? `= ${round3(c.each)} CBM each × ${pcs} = ${c.total} CBM` : "Enter length, width, height and pieces";
+    $("#lCbmOut").textContent = c.total ? `= ${round3(c.each)} CBM each × ${pcs} = ${c.total} CBM` : t("enterDims");
+    $("#lCbmOut").classList.toggle("dv", !c.total && LANG === "dv");
   } else qty = pcs;
   let amt = round2(qty * r);
   const min = Number(L.min) || 0;
@@ -779,7 +842,7 @@ function renderCargoList() {
   });
   const tot = round2(list.reduce((s, c) => s + c.total, 0));
   $("#cargoSummary").textContent = list.length ? `${list.length} receipt${list.length === 1 ? "" : "s"} · ${money(tot)}` : "";
-  $("#cargoList").innerHTML = list.map(cargoRow).join("") || `<div class="empty">No cargo found</div>`;
+  $("#cargoList").innerHTML = list.map(cargoRow).join("") || `<div class="empty ${dvc()}">${t("noCargo")}</div>`;
 }
 $("#cargoSearch").addEventListener("input", renderCargoList);
 $("#cargoVoyageSel").addEventListener("change", renderCargoList);
@@ -802,7 +865,7 @@ function setRateMode(m) {
   $("#rateValueRow").classList.toggle("hidden", m === "size");
   $("#sizeEditor").classList.toggle("hidden", m !== "size");
   $("#rateValueLbl").textContent = RATE_KEY[m] ? t(RATE_KEY[m]) : "";
-  if (m === "size" && !$("#sizeRows").children.length) ["Small", "Medium", "Large"].forEach((n) => addSizeRow(n, ""));
+  if (m === "size" && !$("#sizeRows").children.length) [t("small"), t("medium"), t("large")].forEach((n) => addSizeRow(n, ""));
 }
 $("#rateModeSeg").addEventListener("click", (e) => { if (e.target.dataset.mode) setRateMode(e.target.dataset.mode); });
 
@@ -974,31 +1037,31 @@ async function loadAccounts() {
   const gstPaid = sum(cargo.filter((c) => c.paid), (c) => c.gst);
   const net = round2(cash + transfer + card - gstPaid - exp);
 
-  const stat = (label, value, cls = "") => `<div class="stat ${cls}"><span>${label}</span><b>${value}</b></div>`;
+  const stat = (label, value, cls = "") => `<div class="stat ${cls}"><span class="${dvc()}">${label}</span><b>${value}</b></div>`;
   $("#stats").innerHTML =
-    stat("Total billed", money(billed), "big") +
-    stat("Receipts", cargo.length) +
-    stat("Carried", `${num(kg)} kg · ${num(cbm)} CBM`) +
-    stat("💵 Cash", money(cash)) +
-    stat("🏦 Transfer", money(transfer)) +
-    stat("💳 Card", money(card)) +
-    stat("⏳ Not paid yet", money(unpaid), unpaid ? "bad" : "") +
-    stat("🧾 GST on invoices", money(gst)) +
-    stat("Expenses", money(exp)) +
-    stat("Profit (received − GST − expenses)", money(net), net >= 0 ? "good big" : "bad big");
+    stat(t("totalBilled"), money(billed), "big") +
+    stat(t("receipts"), cargo.length) +
+    stat(t("carried"), `${num(kg)} kg · ${num(cbm)} CBM`) +
+    stat("💵 " + t("cash"), money(cash)) +
+    stat("🏦 " + t("transfer"), money(transfer)) +
+    stat("💳 " + t("card"), money(card)) +
+    stat("⏳ " + t("notPaidYet"), money(unpaid), unpaid ? "bad" : "") +
+    stat("🧾 " + t("gstInv"), money(gst)) +
+    stat(t("expenses"), money(exp)) +
+    stat(t("profit"), money(net), net >= 0 ? "good big" : "bad big");
 
   const agg = {};
   cargo.forEach((c) => { const a = agg[c.receiver.island || "-"] ||= { n: 0, amt: 0 }; a.n++; a.amt += c.total; });
   $("#byIsland").innerHTML = Object.entries(agg).sort((a, b) => b[1].amt - a[1].amt).map(([isl, a]) =>
     `<div class="line"><div class="grow">${esc(isl)}</div><span class="muted">${a.n} receipt${a.n === 1 ? "" : "s"}</span><b>${money(a.amt)}</b></div>`
-  ).join("") || `<div class="empty">No cargo here yet</div>`;
+  ).join("") || `<div class="empty ${dvc()}">${t("noCargoHere")}</div>`;
 
-  $("#billList").innerHTML = cargo.map(cargoRow).join("") || `<div class="empty">No receipts</div>`;
+  $("#billList").innerHTML = cargo.map(cargoRow).join("") || `<div class="empty ${dvc()}">${t("noReceipts")}</div>`;
   $("#expenseList").innerHTML = expenses.map((e) => `
     <div class="line">
       <div class="grow">${esc(e.title)}<div class="muted">${fmtDateTime(new Date(e.createdAtMs))}${e.voyageName ? ` · 🚢 ${esc(e.voyageName.split(" · ")[0])}` : ""}</div></div>
       <b>${money(e.amount)}</b><button class="x" data-del-exp="${e.id}">🗑</button>
-    </div>`).join("") || `<div class="empty">No expenses</div>`;
+    </div>`).join("") || `<div class="empty ${dvc()}">${t("noExpenses")}</div>`;
 }
 $("#billList").addEventListener("click", (e) => {
   const row = e.target.closest(".line"); if (!row) return;
@@ -1141,6 +1204,7 @@ function distM(a, b) {
 }
 function locStatus(msg, on) {
   $("#locStatus").textContent = msg;
+  $("#locStatus").classList.toggle("dv", LANG === "dv" && msg === t("locOff"));
   $("#locBtn").textContent = on ? "Stop" : "📍 Share location";
   $("#locBtn").classList.toggle("primary", !on);
   $("#locBar").classList.toggle("on", !!on);
@@ -1186,7 +1250,7 @@ function stopLocation(keepPref) {
   G.wake = null;
   if (!keepPref) { try { localStorage.removeItem(LOC_KEY); } catch {} }
   if (wasOn && S.boatId && !keepPref) updateDoc(doc(db, "boatpos", S.boatId), { sharing: false, at: Date.now() }).catch(() => {});
-  if ($("#locStatus")) locStatus("Location not shared from this phone", false);
+  if ($("#locStatus")) locStatus(t("locOff"), false);
 }
 $("#locBtn").addEventListener("click", () => {
   if (G.watchId !== null) { if (confirm("Stop sharing the boat location?")) stopLocation(); }
@@ -1195,7 +1259,7 @@ $("#locBtn").addEventListener("click", () => {
 $("#locMapBtn").addEventListener("click", () => window.open(`${portalUrl()}?boat=${S.boatId}`, "_blank"));
 function resumeLocationIfWanted() {
   let want = false; try { want = localStorage.getItem(LOC_KEY) === "1"; } catch {}
-  if (want) startLocation(); else locStatus("Location not shared from this phone", false);
+  if (want) startLocation(); else locStatus(t("locOff"), false);
 }
 $("#portalShareBtn").addEventListener("click", () => {
   const msg = `Track your cargo with *${S.boat.name}*:\n${portalUrl()}\n\nEnter your receipt number and the last 4 digits of your phone.`;

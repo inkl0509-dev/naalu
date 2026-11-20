@@ -99,7 +99,7 @@
       </div>
 
       <div class="locbar" id="locBar">
-        <div class="grow"><b>📍 Boat location</b><div class="muted" id="locStatus">Location not shared from this phone</div></div>
+        <div class="grow"><b>📍 <span data-i18n="locTitle">Boat location</span></b><div class="muted" id="locStatus">Location not shared from this phone</div></div>
         <button type="button" class="btn small" id="locMapBtn">🗺 Map</button>
         <button type="button" class="btn small primary" id="locBtn">📍 Share location</button>
       </div>
@@ -142,8 +142,8 @@
           <button type="button" data-pay="card">💳 <span data-i18n="card">Card</span></button>
           <button type="button" data-pay="unpaid">⏳ <span data-i18n="unpaid">Not paid</span></button>
         </div>
-        <input id="cRef" class="hidden" placeholder="Transfer / card ref (optional)">
-        <p id="unpaidHint" class="muted hidden">Receiver will pay when collecting.</p>
+        <input id="cRef" class="hidden" placeholder="Transfer / card ref (optional)" data-i18n-ph="refPh">
+        <p id="unpaidHint" class="muted hidden" data-i18n="unpaidHint">Receiver will pay when collecting.</p>
 
         <button class="btn primary big" data-i18n="save">✔ Save &amp; make receipt</button>
         <button type="button" class="btn big" id="clearFormBtn" data-i18n="clear">Clear form</button>
@@ -155,19 +155,19 @@
     <!-- CARGO LIST -->
     <div id="view-cargo" class="view hidden">
       <div class="searchbar">
-        <input id="cargoSearch" type="search" placeholder="Search name, phone, island, receipt no…" autocomplete="off">
+        <input id="cargoSearch" type="search" placeholder="Search name, phone, island, receipt no…" data-i18n-ph="searchPh" autocomplete="off">
       </div>
       <select id="cargoVoyageSel" class="fullsel"></select>
       <div class="seg scroll" id="statusSeg">
-        <button data-f="all" class="active">All</button>
-        <button data-f="received">Received</button>
-        <button data-f="loaded">On boat</button>
-        <button data-f="delivered">Delivered</button>
-        <button data-f="unpaid">Not paid</button>
+        <button data-f="all" class="active" data-i18n="fAll">All</button>
+        <button data-f="received" data-i18n="fReceived">Received</button>
+        <button data-f="loaded" data-i18n="fLoaded">On boat</button>
+        <button data-f="delivered" data-i18n="fDelivered">Delivered</button>
+        <button data-f="unpaid" data-i18n="unpaid">Not paid</button>
       </div>
       <div id="cargoSummary" class="muted"></div>
       <div id="cargoList" class="list"></div>
-      <p class="muted center">Showing latest 500 receipts. Use Accounts for older ones.</p>
+      <p class="muted center" data-i18n="latest500">Showing latest 500 receipts. Use Accounts for older ones.</p>
     </div>
 
     <!-- RATES -->
@@ -200,17 +200,17 @@
     <!-- ACCOUNTS -->
     <div id="view-accounts" class="view hidden">
       <div class="seg" id="acctModeSeg">
-        <button data-am="dates" class="active">📅 By date</button>
+        <button data-am="dates" class="active">📅 <span data-i18n="byDate">By date</span></button>
         <button data-am="voyage">🚢 By voyage</button>
       </div>
 
       <div id="acctDates">
         <div class="seg scroll" id="periodSeg">
-          <button data-p="today" class="active">Today</button>
-          <button data-p="yesterday">Yesterday</button>
-          <button data-p="week">7 Days</button>
-          <button data-p="month">This Month</button>
-          <button data-p="custom">Custom</button>
+          <button data-p="today" class="active" data-i18n="today">Today</button>
+          <button data-p="yesterday" data-i18n="yesterday">Yesterday</button>
+          <button data-p="week" data-i18n="days7">7 Days</button>
+          <button data-p="month" data-i18n="thisMonth">This Month</button>
+          <button data-p="custom" data-i18n="custom">Custom</button>
         </div>
         <div id="customRange" class="row hidden">
           <input type="date" id="fromDate">
@@ -226,19 +226,19 @@
 
       <div id="stats" class="stats"></div>
 
-      <h3>Expenses</h3>
+      <h3 data-i18n="expenses">Expenses</h3>
       <form id="expenseForm" class="row">
-        <input id="expTitle" placeholder="e.g. Fuel, crew, food" required>
+        <input id="expTitle" placeholder="e.g. Fuel, crew, food" data-i18n-ph="expPh" required>
         <input id="expAmount" type="number" inputmode="decimal" placeholder="MVR" required min="0" step="any" class="narrow">
-        <button class="btn primary">Add</button>
+        <button class="btn primary" data-i18n="add">Add</button>
       </form>
       <p class="muted" id="expVoyageNote"></p>
       <div id="expenseList" class="list"></div>
 
-      <h3>By island</h3>
+      <h3 data-i18n="byIsland">By island</h3>
       <div id="byIsland" class="list"></div>
 
-      <h3 class="row between">Receipts <button class="btn small" id="exportCsv">⬇ Download CSV</button></h3>
+      <h3 class="row between"><span data-i18n="receipts">Receipts</span> <button class="btn small" id="exportCsv">⬇ Download CSV</button></h3>
       <div id="billList" class="list"></div>
     </div>
 
@@ -261,10 +261,10 @@
 
         <button class="btn primary big" data-i18n="saveSettings">Save settings</button>
       </form>
-      <h3>🌐 Customer tracking page</h3>
-      <p class="muted">Every receipt has a tracking link for the customer. They can also open this page and type their receipt number + last 4 digits of their phone.</p>
+      <h3 data-i18n="portalHead">🌐 Customer tracking page</h3>
+      <p class="muted" data-i18n="portalInfo">Every receipt has a tracking link for the customer. They can also open this page and type their receipt number + last 4 digits of their phone.</p>
       <div class="box"><code id="portalLink"></code></div>
-      <button type="button" class="btn wa big" id="portalShareBtn">Share tracking page on WhatsApp</button>
+      <button type="button" class="btn wa big" id="portalShareBtn" data-i18n="portalShare">Share tracking page on WhatsApp</button>
 
       <h3 data-i18n="islandsList">Islands list</h3>
       <p class="muted" data-i18n="islandsAuto">New islands are added automatically when you save cargo.</p>
@@ -289,55 +289,55 @@
 <div id="lineModal" class="modal hidden">
   <form class="sheet" id="lineForm">
     <div class="sheet-head"><h2 id="lineTitle">Add item</h2><button type="button" class="x" data-close>✕</button></div>
-    <label>Description <input id="lDesc" required placeholder="e.g. Box of clothes, Honda motorcycle"></label>
+    <label><span data-i18n="desc">Description</span> <input id="lDesc" required placeholder="e.g. Box of clothes, Honda motorcycle" data-i18n-ph="descPh"></label>
     <div class="seg scroll" id="lineModeSeg">
-      <button type="button" data-mode="kg">⚖️ Weight</button>
-      <button type="button" data-mode="piece">🔢 Pieces</button>
-      <button type="button" data-mode="cbm">📐 CBM</button>
-      <button type="button" data-mode="size">📏 Size</button>
-      <button type="button" data-mode="fixed">✍️ Fixed</button>
+      <button type="button" data-mode="kg">⚖️ <span data-i18n="mWeight">Weight</span></button>
+      <button type="button" data-mode="piece">🔢 <span data-i18n="mPieces">Pieces</span></button>
+      <button type="button" data-mode="cbm">📐 <span data-i18n="mCbm">CBM</span></button>
+      <button type="button" data-mode="size">📏 <span data-i18n="bySize">Size</span></button>
+      <button type="button" data-mode="fixed">✍️ <span data-i18n="mFixed">Fixed</span></button>
     </div>
 
     <div id="lSizeBox" class="chips hidden"></div>
 
     <div id="lDimBox" class="hidden stack">
       <div class="row">
-        <label>Length <input id="lL" type="number" inputmode="decimal" min="0" step="any"></label>
-        <label>Width <input id="lW" type="number" inputmode="decimal" min="0" step="any"></label>
-        <label>Height <input id="lH" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label><span data-i18n="length">Length</span> <input id="lL" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label><span data-i18n="width">Width</span> <input id="lW" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label><span data-i18n="height">Height</span> <input id="lH" type="number" inputmode="decimal" min="0" step="any"></label>
       </div>
       <div class="seg" id="unitSeg">
-        <button type="button" data-u="cm" class="active">cm</button>
-        <button type="button" data-u="in">inch</button>
-        <button type="button" data-u="ft">feet</button>
-        <button type="button" data-u="m">metre</button>
+        <button type="button" data-u="cm" class="active" data-i18n="cm">cm</button>
+        <button type="button" data-u="in" data-i18n="inch">inch</button>
+        <button type="button" data-u="ft" data-i18n="feet">feet</button>
+        <button type="button" data-u="m" data-i18n="metre">metre</button>
       </div>
     </div>
 
     <div class="row">
-      <label id="lWeightLbl">Weight (kg) <input id="lWeight" type="number" inputmode="decimal" min="0" step="any"></label>
-      <label id="lPcsLbl">Pieces <input id="lPcs" type="number" inputmode="numeric" min="0" step="1"></label>
+      <label id="lWeightLbl"><span data-i18n="weightKg">Weight (kg)</span> <input id="lWeight" type="number" inputmode="decimal" min="0" step="any"></label>
+      <label id="lPcsLbl"><span data-i18n="mPieces">Pieces</span> <input id="lPcs" type="number" inputmode="numeric" min="0" step="1"></label>
       <label id="lRateLbl"><span id="lRateTxt">Rate</span> <input id="lRate" type="number" inputmode="decimal" min="0" step="any"></label>
     </div>
     <p id="lCbmOut" class="cbm-out hidden"></p>
     <p id="lMinNote" class="muted hidden"></p>
-    <label>Amount (MVR) <input id="lAmount" type="number" inputmode="decimal" min="0" step="any" required class="amount-big"></label>
-    <button class="btn primary big">Add to receipt</button>
+    <label><span data-i18n="amount">Amount (MVR)</span> <input id="lAmount" type="number" inputmode="decimal" min="0" step="any" required class="amount-big"></label>
+    <button class="btn primary big" data-i18n="addToReceipt">Add to receipt</button>
   </form>
 </div>
 
 <!-- New voyage -->
 <div id="voyageModal" class="modal hidden">
   <form class="sheet" id="voyageForm">
-    <div class="sheet-head"><h2>New voyage</h2><button type="button" class="x" data-close>✕</button></div>
-    <label>Voyage name / no. <input id="vName" required></label>
-    <div class="row">
-      <label>From <input id="vFrom" list="islandList" placeholder="e.g. Malé"></label>
-      <label>To <input id="vTo" list="islandList" placeholder="e.g. Thinadhoo"></label>
+    <div class="sheet-head"><h2 data-i18n="vTitle">New voyage</h2><button type="button" class="x" data-close>✕</button></div>
+    <label><span data-i18n="vName">Voyage name / no.</span> <input id="vName" required></label>
+    <div class="row" id="vRouteRow">
+      <label><span data-i18n="vFrom">From</span> <input id="vFrom" list="islandList" placeholder="e.g. Malé" data-i18n-ph="vFromPh"></label>
+      <label><span data-i18n="vTo">To</span> <input id="vTo" list="islandList" placeholder="e.g. Fuvahmulah" data-i18n-ph="vToPh"></label>
     </div>
-    <label>Departure date <input id="vDate" type="date" required></label>
-    <p class="muted">New cargo on all crew phones will be added to this voyage.</p>
-    <button class="btn primary big">Start voyage</button>
+    <label><span data-i18n="vDate">Departure date</span> <input id="vDate" type="date" required></label>
+    <p class="muted" data-i18n="vNote">New cargo on all crew phones will be added to this voyage.</p>
+    <button class="btn primary big" data-i18n="vStart">Start voyage</button>
   </form>
 </div>
 
