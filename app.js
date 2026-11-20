@@ -322,6 +322,8 @@ const DV = {
   vDate: "ފުރާ ތާރީޚު",
   vNote: "ފަޅުވެރިންގެ ފޯނުތަކުގައިވާ އައު މުދާ މި ދަތުރަށް އިތުރުކުރެވޭނެއެވެ.",
   vStart: "ދަތުރު ފަށާ",
+  byVoyage: "ދަތުރުން",
+  navReceive: "ބަލައިގަތުން", navCargo: "މުދާ", navRates: "އަގުތައް", navAccounts: "ހިސާބު ކިތާބު", navSettings: "ސެޓިންގް",
 };
 const EN = {
   otherItem: "＋ Other item", noItems: "No items yet", taxInvoice: "🧾 Tax invoice (GST {r}%)",

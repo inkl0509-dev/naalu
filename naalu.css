@@ -75,3 +75,41 @@ label > span.dv, #rateValueLbl.dv { display: block; text-align: right; }
 .check:has(.dv) { flex-direction: row-reverse; justify-content: flex-start; text-align: right; }
 p.dv, h3.dv, .empty.dv { text-align: right; }
 #vRouteRow:has(.dv) { flex-direction: row-reverse; }
+
+/* ===== Bigger, easier-to-press buttons (min 48px finger targets) ===== */
+.btn { min-height: 48px; padding: 12px 16px; font-size: 16px; border-radius: 12px; }
+.btn.small { min-height: 46px; padding: 10px 14px; font-size: 15px; }
+.btn.big { min-height: 56px; font-size: 17px; }
+.seg button { min-height: 50px; padding: 10px 8px; font-size: 15px; border-radius: 12px; }
+.chip { min-height: 54px; padding: 10px 14px; font-size: 15px; justify-content: center; }
+.chip.static { min-height: 48px; }
+.x { min-width: 48px; min-height: 48px; font-size: 20px; display: inline-grid; place-items: center; }
+.pill.langbtn { min-height: 44px; min-width: 64px; padding: 8px 14px; font-size: 15px; border-radius: 12px; background: #ffffff2e; }
+.voyagebar select, .fullsel, select { min-height: 50px; font-size: 16px; }
+input { min-height: 50px; }
+.check { min-height: 50px; }
+.check input { width: 28px; height: 28px; min-height: 0; flex: none; }
+.bottomnav button { min-height: 62px; font-size: 24px; }
+.bottomnav button span { font-size: 12px; }
+
+/* Tabs: show all options at once (no sideways scrolling), in neat rows */
+#lineModeSeg, #rateModeSeg, #statusSeg, #periodSeg { display: grid; overflow: visible; gap: 8px; }
+#lineModeSeg, #periodSeg, #statusSeg { grid-template-columns: repeat(3, 1fr); }
+#rateModeSeg, #unitSeg, #paySeg, #acctModeSeg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+#unitSeg { grid-template-columns: repeat(4, 1fr); }
+#lineModeSeg button.hidden { display: none; }
+
+/* Location bar: buttons go under the text so they can be full size */
+.locbar { flex-wrap: wrap; }
+.locbar > .grow { flex-basis: 100%; }
+.locbar .btn { flex: 1; }
+/* Voyage bar: "New" button full height */
+.voyagebar { flex-wrap: wrap; }
+.voyagebar select { flex: 1 1 160px; }
+
+/* More space between list rows so you don't tap the wrong one */
+.list { gap: 10px; }
+.line { min-height: 60px; padding: 12px; }
+.stepper button { width: 48px; height: 48px; }
+/* Bottom menu in Dhivehi: keep labels centred and on one line */
+.bottomnav button span.dv { direction: rtl; font-size: 12px; white-space: nowrap; line-height: 1.5; }
