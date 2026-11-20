@@ -113,7 +113,7 @@ $$("[data-logout]").forEach((b) => b.addEventListener("click", () => signOut(aut
 // ---------------- Screens / routing ----------------
 const SCREENS = ["#login", "#verifyScreen", "#joinScreen", "#adminScreen", "#app"];
 function showScreen(id) { SCREENS.forEach((s) => $(s).classList.toggle("hidden", s !== id)); }
-function stopListeners() { S.unsub.forEach((u) => u()); S.unsub = []; }
+function stopListeners() { S.unsub.forEach((u) => u()); S.unsub = []; if (typeof stopLocation === "function") stopLocation(true); }
 
 onAuthStateChanged(auth, async (user) => {
   stopListeners();
@@ -189,6 +189,8 @@ async function startBoat(boatId) {
   showScreen("#app");
   applyBoat();
   clearForm();
+  $("#portalLink").textContent = portalUrl();
+  resumeLocationIfWanted();
 
   S.unsub.push(onSnapshot(doc(db, "boats", boatId), (d) => {
     if (d.exists()) { S.boat = { ...DEFAULT_BOAT, ...d.data() }; applyBoat(); }
@@ -240,8 +242,51 @@ const DV = {
   card: "ކާޑު",
   save: "ސޭވްކޮށް ރަސީދު ހަދާ",
   clear: "ފޯމު ހުސްކުރޭ",
+  sendTo: "ފޮނުވާ ރަށް / ތަން",
+  notes: "ނޯޓު (އިޚްތިޔާރީ) މިސާލަކަށް: ނާޒުކު، ހިއްކާފައި ބެހެއްޓުން",
+  taxInvoice: "🧾 ޓެކްސް އިންވޮއިސް (ޖީ.އެސް.ޓީ {r}%)",
+  voyage: "ދަތުރު",
+  noVoyage: "ދަތުރެއް ނެތް",
+  newVoyage: "އާ ދަތުރު",
+  ratesIntro: "އަގުތައް އެއްފަހަރު ކަނޑައަޅާށެވެ. އެއަށްފަހު މުދާ ބަލައިގަންނައިރު އޭގައި ޓެޕްކޮށްލާށެވެ.",
+  rateName: "މުދަލުގެ ނަން، މިސާލަކަށް: ފޮށިގަނޑު، ސައިކަލް، ސިމެންތި ބަސްތާ",
+  perKg: "ކިލޯއަކަށް",
+  perPiece: "ޕީސްއަކަށް",
+  perCbm: "ސީ.ބީ.އެމް އަކަށް",
+  bySize: "ސައިޒުން",
+  priceKg: "ކިލޯއެއްގެ އަގު (ދިވެހި ރުފިޔާ)",
+  pricePiece: "ޕީސްއެއްގެ އަގު (ދިވެހި ރުފިޔާ)",
+  priceCbm: "ސީ.ބީ.އެމް އެއްގެ އަގު (ދިވެހި ރުފިޔާ)",
+  minCharge: "އެންމެ ކުޑަ އަގު (ދިވެހި ރުފިޔާ) (އިޚްތިޔާރީ)",
+  addRate: "ރޭޓް އިތުރުކުރޭ",
+  noRates: "އަދި އެއްވެސް ރޭޓެއް ނެތެވެ. މިސާލު: ފޮށިގަނޑު (ކިލޯއަކަށް)، ސައިކަލް (ޕީސްއަކަށް)، ފަރުނީޗަރު (ސީ.ބީ.އެމް އަކަށް)، ކޮންޓޭނަރު (ސައިޒުން).",
+  boatName: "ދޯނީގެ ނަން",
+  boatPhone: "ދޯނީގެ ފޯނު",
+  homeIsland: "ރަށް (ހޯމް އައިލެންޑް) / އޮފީސް",
+  country: "ކަންޓްރީ ކޯޑު (ދިވެހިރާއްޖެ = 960)",
+  footer: "ރަސީދުގެ ތިރީގައި ހިމަނާ މެސެޖު",
+  taxHead: "🧾 ޓެކްސް (ޖީ.އެސް.ޓީ) އިންވޮއިސް",
+  legalName: "ރަޖިސްޓްރީކޮށްފައިވާ ވިޔަފާރީގެ ނަން",
+  asOnCert: "ޖީ.އެސް.ޓީ ސެޓްފިކެޓުގައިވާ ގޮތަށް",
+  tin: "ޓީ.އައި.އެން / ޖީ.އެސް.ޓީ ރަޖިސްޓްރީ ނަންބަރު",
+  gstRate: "ޖީ.އެސް.ޓީ ރޭޓް (%)",
+  gstIncl: "އަހަރެންގެ އަގުތަކުގައި ޖީ.އެސް.ޓީ ހިމެނިފައި",
+  taxDefault: "ކޮންމެ ރަސީދެއް ޓެކްސް އިންވޮއިސްއަކަށް ހަދާ",
+  saveSettings: "ސެޓިންގްސް ސޭވްކުރޭ",
+  islandsList: "ރަށްތަކުގެ ލިސްޓު",
+  islandsAuto: "މުދާ ސޭވްކުރުމުން އާ ރަށްތައް އަމިއްލައަށް އިތުރުވާނެއެވެ.",
+  noneYet: "އަދި އެއްވެސް އެއްޗެއް ނެތް",
+  logout: "ލޮގް އައުޓް",
 };
-const EN = { otherItem: "＋ Other item", noItems: "No items yet" };
+const EN = {
+  otherItem: "＋ Other item", noItems: "No items yet", taxInvoice: "🧾 Tax invoice (GST {r}%)",
+  noVoyage: "No voyage", priceKg: "Price per kg (MVR)", pricePiece: "Price per piece (MVR)",
+  priceCbm: "Price per CBM (MVR)", addRate: "Add rate",
+  noRates: "No rates yet. Examples: Box (per kg), Motorcycle (per piece), Furniture (per CBM), Container (by size).",
+  noneYet: "None yet",
+};
+// Receipt footer suggestions (receipt text itself is chosen by the boat, not by phone language)
+const FOOTERS = ["Thank you for choosing us 🚤", "އަޅުގަނޑުމެން އިޚްތިޔާރު ކުރެއްވި ކަމަށްޓަކައި ޝުކުރިއްޔާ 🚤"];
 let LANG = "en";
 try { LANG = localStorage.getItem("naalu-lang") || "en"; } catch {}
 const t = (k) => (LANG === "dv" && DV[k]) || EN[k] || k;
@@ -260,7 +305,14 @@ function applyLang() {
   });
   $("#langBtn").textContent = dv ? "EN" : "ދިވެހި";
   $("#langBtn").classList.toggle("dv", !dv);
-  renderRateChips(); renderLines();
+  renderTaxLbl(); renderRateChips(); renderLines(); renderRateList(); renderVoyageSelects(); renderIslands();
+  if (!S.editRateId) { $("#rateSave").textContent = "+ " + t("addRate"); $("#rateSave").classList.toggle("dv", dv); }
+  $("#rateValueLbl").textContent = t(RATE_KEY[S.rateMode] || "priceKg");
+  $("#rateValueLbl").classList.toggle("dv", dv);
+}
+function renderTaxLbl() {
+  $("#taxLbl").textContent = t("taxInvoice").replace("{r}", Number(S.boat.gstRate) || 0);
+  $("#taxLbl").classList.toggle("dv", LANG === "dv");
 }
 $("#langBtn").addEventListener("click", () => {
   LANG = LANG === "dv" ? "en" : "dv";
@@ -275,7 +327,7 @@ const voyageLabel = (v) => v ? `${v.name}${v.from || v.to ? ` · ${v.from || "?"
 function renderVoyageSelects() {
   const cur = S.boat.currentVoyageId || "";
   const open = S.voyages.filter((v) => v.status !== "closed" || v.id === cur);
-  $("#voyageSel").innerHTML = `<option value="">— No voyage —</option>` +
+  $("#voyageSel").innerHTML = `<option value="">— ${t("noVoyage")} —</option>` +
     open.map((v) => `<option value="${v.id}" ${v.id === cur ? "selected" : ""}>${esc(voyageLabel(v))}</option>`).join("");
   const all = S.voyages.map((v) => `<option value="${v.id}">${esc(voyageLabel(v))}${v.status === "closed" ? " (closed)" : ""}</option>`).join("");
   const cv = $("#cargoVoyageSel").value;
@@ -548,13 +600,14 @@ $("#cargoForm").addEventListener("submit", (e) => {
     ref: S.payment === "transfer" || S.payment === "card" ? $("#cRef").value.trim() : "",
     notes: $("#cNotes").value.trim(),
     voyageId: v ? v.id : "", voyageName: v ? voyageLabel(v) : "",
-    status: "received", statusAtMs: now.getTime(),
+    status: "received", statusAtMs: now.getTime(), receivedAtMs: now.getTime(),
     createdBy: auth.currentUser?.email || "",
     createdAtMs: now.getTime(), createdAt: serverTimestamp(),
   };
   const ref = doc(col("cargo"));
   setDoc(ref, cargo).catch(fail);   // not awaited: works offline
   cargo.id = ref.id;
+  syncTracking(cargo);
 
   if (sPhone) setDoc(doc(col("contacts"), sPhone), { name: cargo.sender.name, updatedAt: Date.now() }).catch(() => {});
   if (rPhone) setDoc(doc(col("contacts"), rPhone), { name: cargo.receiver.name, updatedAt: Date.now() }).catch(() => {});
@@ -568,7 +621,7 @@ $("#cargoForm").addEventListener("submit", (e) => {
 
 // ---------------- RECEIPT ----------------
 const PAYNAME = { cash: "Cash", transfer: "Bank Transfer", card: "Card" };
-function receiptText(c) {
+function receiptText(c, forPhone) {
   const L = [];
   if (c.tax) {
     L.push("*TAX INVOICE*", `*${S.boat.legalName || S.boat.name}*`);
@@ -598,6 +651,8 @@ function receiptText(c) {
   else L.push(`⏳ NOT PAID – collect ${money(c.total)} from receiver`);
   L.push(`Status: ${STATUS[c.status] || c.status}`);
   if (c.notes) L.push(`Note: ${c.notes}`);
+  const link = trackLink(c, forPhone);
+  if (link) L.push("", `📍 Track your cargo: ${link}`);
   if (S.boat.footer) L.push("", S.boat.footer);
   return L.join("\n");
 }
@@ -616,8 +671,11 @@ new MutationObserver(() => { if ($("#billModal").classList.contains("hidden")) S
 
 $("#billStatusSeg").addEventListener("click", (e) => {
   const s = e.target.dataset.s; if (!s || !S.bill) return;
-  updateDoc(doc(col("cargo"), S.bill.id), { status: s, statusAtMs: Date.now() }).catch(fail);
-  refreshBill({ ...S.bill, status: s });
+  const now = Date.now();
+  const upd = { status: s, statusAtMs: now, [s + "AtMs"]: now };
+  updateDoc(doc(col("cargo"), S.bill.id), upd).catch(fail);
+  refreshBill({ ...S.bill, ...upd });
+  syncTracking(S.bill);
   toast(STATUS[s]);
 });
 $("#payNowBox").addEventListener("click", (e) => {
@@ -625,14 +683,16 @@ $("#payNowBox").addEventListener("click", (e) => {
   const upd = { paid: true, paidMethod: m, paidAtMs: Date.now() };
   updateDoc(doc(col("cargo"), S.bill.id), upd).catch(fail);
   refreshBill({ ...S.bill, ...upd });
+  syncTracking(S.bill);
   toast("Marked as paid ✔");
 });
 
 $("#billModal").addEventListener("click", async (e) => {
   const how = e.target.dataset.send; if (!how || !S.bill) return;
   const c = S.bill;
-  const phone = normalizePhone(how.endsWith("receiver") ? c.receiver.phone : c.sender.phone);
-  const text = receiptText(c);
+  const raw = how.endsWith("receiver") ? c.receiver.phone : c.sender.phone;
+  const phone = normalizePhone(raw);
+  const text = receiptText(c, raw);
   if (how.startsWith("wa")) {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
   } else {
@@ -686,6 +746,7 @@ $("#labelPrintBtn").addEventListener("click", () => {
 $("#billDeleteBtn").addEventListener("click", () => {
   if (!confirm("Delete this receipt? This cannot be undone.")) return;
   deleteDoc(doc(col("cargo"), S.bill.id)).catch(fail);
+  deleteTracking(S.bill);
   $("#billModal").classList.add("hidden");
   toast("Receipt deleted");
   if (!$("#view-accounts").classList.contains("hidden")) setTimeout(loadAccounts, 300);
@@ -734,13 +795,13 @@ $("#cargoList").addEventListener("click", (e) => {
 });
 
 // ---------------- RATES ----------------
-const RATE_LBL = { kg: "Price per kg (MVR)", piece: "Price per piece (MVR)", cbm: "Price per CBM (MVR)" };
+const RATE_KEY = { kg: "priceKg", piece: "pricePiece", cbm: "priceCbm" };
 function setRateMode(m) {
   S.rateMode = m;
   $$("#rateModeSeg button").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
   $("#rateValueRow").classList.toggle("hidden", m === "size");
   $("#sizeEditor").classList.toggle("hidden", m !== "size");
-  $("#rateValueLbl").textContent = RATE_LBL[m] || "";
+  $("#rateValueLbl").textContent = RATE_KEY[m] ? t(RATE_KEY[m]) : "";
   if (m === "size" && !$("#sizeRows").children.length) ["Small", "Medium", "Large"].forEach((n) => addSizeRow(n, ""));
 }
 $("#rateModeSeg").addEventListener("click", (e) => { if (e.target.dataset.mode) setRateMode(e.target.dataset.mode); });
@@ -770,11 +831,11 @@ function renderRateList() {
         <div class="muted">${desc(r)}${r.min ? ` · min ${money(r.min)}` : ""}</div></div>
       ${r.mode === "size" ? "<b>📏</b>" : `<b>${money(r.rate)}${MODE_UNIT[r.mode] || ""}</b>`}
       <button class="x" data-del-rate="${r.id}">🗑</button>
-    </div>`).join("") || `<div class="empty">No rates yet. Examples: Box (per kg), Motorcycle (per piece), Furniture (per CBM), Container (by size).</div>`;
+    </div>`).join("") || `<div class="empty ${LANG === "dv" ? "dv" : ""}">${t("noRates")}</div>`;
 }
 function resetRateForm() {
   S.editRateId = null; $("#rateForm").reset(); $("#sizeRows").innerHTML = ""; setRateMode("kg");
-  $("#rateSave").textContent = "+ Add rate"; $("#rateCancel").classList.add("hidden");
+  $("#rateSave").textContent = "+ " + t("addRate"); $("#rateCancel").classList.add("hidden");
 }
 $("#rateCancel").addEventListener("click", resetRateForm);
 $("#rateList").addEventListener("click", (e) => {
@@ -986,13 +1047,20 @@ function applyBoat() {
   document.title = S.boat.name + " · Naalu";
   const islands = S.boat.islands || [];
   $("#islandList").innerHTML = islands.map((i) => `<option value="${esc(i)}">`).join("");
-  $("#islandChips").innerHTML = islands.map((i) =>
-    `<span class="chip static">${esc(i)} <button class="x" data-del-isl="${esc(i)}">✕</button></span>`).join("")
-    || `<span class="muted">None yet</span>`;
-  $("#gstRateLbl").textContent = Number(S.boat.gstRate) || 0;
+  renderIslands();
+  renderTaxLbl();
   renderVoyageSelects();
   renderLines();
 }
+function renderIslands() {
+  $("#islandChips").innerHTML = (S.boat.islands || []).map((i) =>
+    `<span class="chip static">${esc(i)} <button class="x" data-del-isl="${esc(i)}">✕</button></span>`).join("")
+    || `<span class="muted ${LANG === "dv" ? "dv" : ""}">${t("noneYet")}</span>`;
+}
+$("#footerChips").innerHTML = FOOTERS.map((f) => `<button type="button" class="chip" data-footer="${esc(f)}">${esc(f)}</button>`).join("");
+$("#footerChips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-footer]"); if (b) $("#setFooter").value = b.dataset.footer;
+});
 $("#islandChips").addEventListener("click", (e) => {
   const isl = e.target.dataset.delIsl; if (isl === undefined) return;
   updateDoc(doc(db, "boats", S.boatId), { islands: (S.boat.islands || []).filter((x) => x !== isl) }).catch(fail);
@@ -1029,6 +1097,109 @@ $("#settingsForm").addEventListener("submit", (e) => {
   if (taxDefaultChanged && !S.lines.length) { $("#cTax").checked = changes.taxDefault; $("#cTin").classList.toggle("hidden", !changes.taxDefault); }
   applyBoat();
   toast("Settings saved ✔");
+});
+
+// ---------------- CUSTOMER TRACKING (public, limited copy) ----------------
+// tracking/{receiptNo}-{last 4 digits of phone}: what the customer portal may see. No full phone numbers, no accounts.
+const last4 = (p) => String(p || "").replace(/\D/g, "").slice(-4);
+const shortName = (n) => { const p = String(n || "").trim().split(/\s+/); return p[0] ? p[0] + (p[1] ? " " + p[1][0] + "." : "") : ""; };
+const portalUrl = () => new URL("track.html", location.href).href.split("?")[0];
+function trackIds(c) {
+  const ids = new Set();
+  [c.sender?.phone, c.receiver?.phone].forEach((p) => { if (last4(p).length === 4) ids.add(`${c.receiptNo}-${last4(p)}`); });
+  return [...ids];
+}
+function trackLink(c, forPhone) {
+  const p = last4(forPhone || c.sender?.phone || c.receiver?.phone);
+  return p.length === 4 && c.receiptNo ? `${portalUrl()}?r=${encodeURIComponent(c.receiptNo)}&p=${p}` : "";
+}
+function syncTracking(c) {
+  const v = voyageById(c.voyageId);
+  const data = {
+    boatId: S.boatId, boatName: S.boat.name, boatPhone: S.boat.phone || "",
+    receiptNo: c.receiptNo, status: c.status,
+    receivedAtMs: c.receivedAtMs || c.createdAtMs, loadedAtMs: c.loadedAtMs || 0, deliveredAtMs: c.deliveredAtMs || 0,
+    from: v?.from || S.boat.address || "", island: c.receiver.island,
+    voyageName: c.voyageName || "", voyageDate: v?.date || "",
+    senderName: shortName(c.sender.name), receiverName: shortName(c.receiver.name),
+    items: c.lines.map((l) => l.desc).slice(0, 20), pieces: c.pieces || 0, weight: c.weight || 0, cbm: c.cbm || 0,
+    total: c.total, paid: !!c.paid,
+    createdAtMs: c.createdAtMs, updatedAtMs: Date.now(),
+  };
+  trackIds(c).forEach((id) => setDoc(doc(db, "tracking", id), data).catch(() => {}));
+}
+function deleteTracking(c) { trackIds(c).forEach((id) => deleteDoc(doc(db, "tracking", id)).catch(() => {})); }
+
+// ---------------- BOAT LOCATION (shared from one crew phone) ----------------
+const G = { watchId: null, last: null, lastSentAt: 0, wake: null };
+const LOC_KEY = "naalu-share-loc";
+function distM(a, b) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+function locStatus(msg, on) {
+  $("#locStatus").textContent = msg;
+  $("#locBtn").textContent = on ? "Stop" : "📍 Share location";
+  $("#locBtn").classList.toggle("primary", !on);
+  $("#locBar").classList.toggle("on", !!on);
+}
+async function keepAwake() {
+  try { if ("wakeLock" in navigator && !G.wake) { G.wake = await navigator.wakeLock.request("screen"); G.wake.addEventListener("release", () => { G.wake = null; }); } } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (G.watchId !== null && document.visibilityState === "visible") keepAwake(); });
+
+function startLocation() {
+  if (!navigator.geolocation) return locStatus("This phone can't share location", false);
+  if (G.watchId !== null) return;
+  locStatus("Getting GPS…", true);
+  keepAwake();
+  try { localStorage.setItem(LOC_KEY, "1"); } catch {}
+  G.watchId = navigator.geolocation.watchPosition((pos) => {
+    const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    const now = Date.now();
+    // send at most once a minute, or sooner if the boat moved more than 300 m
+    if (G.last && now - G.lastSentAt < 60000 && distM(G.last, p) < 300) return;
+    G.last = p; G.lastSentAt = now;
+    const v = voyageById(S.boat.currentVoyageId);
+    setDoc(doc(db, "boatpos", S.boatId), {
+      lat: p.lat, lng: p.lng, acc: Math.round(pos.coords.accuracy || 0),
+      speedKn: pos.coords.speed != null ? Math.round(pos.coords.speed * 1.94384 * 10) / 10 : null,
+      heading: pos.coords.heading ?? null,
+      at: now, sharing: true, boatName: S.boat.name, voyageName: v ? voyageLabel(v) : "",
+      by: auth.currentUser?.email || "",
+    }).catch(() => {});
+    const t = new Date(now);
+    locStatus(`Sharing · sent ${pad(t.getHours())}:${pad(t.getMinutes())}${navigator.onLine ? "" : " (offline – will send when signal returns)"}`, true);
+  }, (err) => {
+    const m = err.code === 1 ? "Location permission denied – allow it in phone settings" : "No GPS signal yet…";
+    locStatus(m, err.code !== 1);
+    if (err.code === 1) stopLocation();
+  }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 120000 });
+}
+function stopLocation(keepPref) {
+  if (G.watchId !== null) navigator.geolocation.clearWatch(G.watchId);
+  const wasOn = G.watchId !== null;
+  G.watchId = null; G.last = null;
+  try { G.wake?.release(); } catch {}
+  G.wake = null;
+  if (!keepPref) { try { localStorage.removeItem(LOC_KEY); } catch {} }
+  if (wasOn && S.boatId && !keepPref) updateDoc(doc(db, "boatpos", S.boatId), { sharing: false, at: Date.now() }).catch(() => {});
+  if ($("#locStatus")) locStatus("Location not shared from this phone", false);
+}
+$("#locBtn").addEventListener("click", () => {
+  if (G.watchId !== null) { if (confirm("Stop sharing the boat location?")) stopLocation(); }
+  else startLocation();
+});
+$("#locMapBtn").addEventListener("click", () => window.open(`${portalUrl()}?boat=${S.boatId}`, "_blank"));
+function resumeLocationIfWanted() {
+  let want = false; try { want = localStorage.getItem(LOC_KEY) === "1"; } catch {}
+  if (want) startLocation(); else locStatus("Location not shared from this phone", false);
+}
+$("#portalShareBtn").addEventListener("click", () => {
+  const msg = `Track your cargo with *${S.boat.name}*:\n${portalUrl()}\n\nEnter your receipt number and the last 4 digits of your phone.`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
 });
 
 // ---------------- ADMIN ----------------

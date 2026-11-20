@@ -93,9 +93,15 @@
     <!-- RECEIVE -->
     <div id="view-new" class="view">
       <div class="voyagebar">
-        <span>🚢 Voyage</span>
+        <span>🚢 <span data-i18n="voyage">Voyage</span></span>
         <select id="voyageSel"></select>
-        <button type="button" class="btn small" id="newVoyageBtn">+ New</button>
+        <button type="button" class="btn small" id="newVoyageBtn">+ <span data-i18n="newVoyage">New</span></button>
+      </div>
+
+      <div class="locbar" id="locBar">
+        <div class="grow"><b>📍 Boat location</b><div class="muted" id="locStatus">Location not shared from this phone</div></div>
+        <button type="button" class="btn small" id="locMapBtn">🗺 Map</button>
+        <button type="button" class="btn small primary" id="locBtn">📍 Share location</button>
       </div>
 
       <form id="cargoForm" class="stack" autocomplete="off">
@@ -108,7 +114,7 @@
           <h4>📥 <span data-i18n="receiver">Receiver</span></h4>
           <input id="rName" placeholder="Receiver name" data-i18n-ph="receiverName" required>
           <input id="rPhone" type="tel" inputmode="tel" placeholder="Receiver phone" data-i18n-ph="receiverPhone" list="contactList">
-          <input id="rIsland" placeholder="Send to (island / place)" list="islandList" required>
+          <input id="rIsland" placeholder="Send to (island / place)" data-i18n-ph="sendTo" list="islandList" required>
         </div>
 
         <div class="box">
@@ -117,10 +123,10 @@
           <div id="lineList" class="list"></div>
         </div>
 
-        <input id="cNotes" placeholder="Notes (optional) e.g. fragile, keep dry">
+        <input id="cNotes" placeholder="Notes (optional) e.g. fragile, keep dry" data-i18n-ph="notes">
 
         <div class="box taxbox">
-          <label class="check"><input type="checkbox" id="cTax"> <span>🧾 Tax invoice (GST <span id="gstRateLbl">8</span>%)</span></label>
+          <label class="check"><input type="checkbox" id="cTax"> <span id="taxLbl">🧾 Tax invoice (GST 8%)</span></label>
           <input id="cTin" class="hidden" placeholder="Customer TIN (optional, for GST-registered customers)">
         </div>
 
@@ -166,14 +172,14 @@
 
     <!-- RATES -->
     <div id="view-rates" class="view hidden">
-      <p class="muted">Set your prices once. Then tap them when receiving cargo.</p>
+      <p class="muted" data-i18n="ratesIntro">Set your prices once. Then tap them when receiving cargo.</p>
       <form id="rateForm" class="box stack">
-        <input id="rateName" placeholder="Item name, e.g. Box, Motorcycle, Cement bag" required>
+        <input id="rateName" placeholder="Item name, e.g. Box, Motorcycle, Cement bag" data-i18n-ph="rateName" required>
         <div class="seg scroll" id="rateModeSeg">
-          <button type="button" data-mode="kg" class="active">⚖️ Per kg</button>
-          <button type="button" data-mode="piece">🔢 Per piece</button>
-          <button type="button" data-mode="cbm">📐 Per CBM</button>
-          <button type="button" data-mode="size">📏 By size</button>
+          <button type="button" data-mode="kg" class="active">⚖️ <span data-i18n="perKg">Per kg</span></button>
+          <button type="button" data-mode="piece">🔢 <span data-i18n="perPiece">Per piece</span></button>
+          <button type="button" data-mode="cbm">📐 <span data-i18n="perCbm">Per CBM</span></button>
+          <button type="button" data-mode="size">📏 <span data-i18n="bySize">By size</span></button>
         </div>
         <div class="row" id="rateValueRow">
           <label><span id="rateValueLbl">Price per kg (MVR)</span><input id="rateValue" type="number" inputmode="decimal" min="0" step="any"></label>
@@ -182,7 +188,7 @@
           <div id="sizeRows" class="stack"></div>
           <button type="button" class="btn small" id="addSizeBtn">+ Add size</button>
         </div>
-        <label>Minimum charge (MVR) <small>(optional)</small><input id="rateMin" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label><span data-i18n="minCharge">Minimum charge (MVR) (optional)</span><input id="rateMin" type="number" inputmode="decimal" min="0" step="any"></label>
         <div class="row">
           <button type="button" class="btn hidden" id="rateCancel">Cancel</button>
           <button class="btn primary grow" id="rateSave">+ Add rate</button>
@@ -239,26 +245,32 @@
     <!-- SETTINGS -->
     <div id="view-settings" class="view hidden">
       <form id="settingsForm" class="stack">
-        <label>Boat name <input id="setName" required></label>
-        <label>Boat phone <input id="setPhone" type="tel"></label>
-        <label>Home island / office <input id="setAddress"></label>
-        <label>Country code (Maldives = 960) <input id="setCountry" inputmode="numeric"></label>
-        <label>Receipt footer message <input id="setFooter"></label>
+        <label><span data-i18n="boatName">Boat name</span> <input id="setName" required></label>
+        <label><span data-i18n="boatPhone">Boat phone</span> <input id="setPhone" type="tel"></label>
+        <label><span data-i18n="homeIsland">Home island / office</span> <input id="setAddress"></label>
+        <label><span data-i18n="country">Country code (Maldives = 960)</span> <input id="setCountry" inputmode="numeric"></label>
+        <label><span data-i18n="footer">Receipt footer message</span> <input id="setFooter"></label>
+        <div class="chips" id="footerChips"></div>
 
-        <h3>🧾 Tax (GST) invoice</h3>
-        <label>Registered business name <input id="setLegalName" placeholder="As on GST certificate"></label>
-        <label>TIN / GST registration no. <input id="setTin"></label>
-        <label>GST rate (%) <input id="setGst" type="number" inputmode="decimal" min="0" step="any"></label>
-        <label class="check"><input type="checkbox" id="setGstIncl"> My prices already include GST</label>
-        <label class="check"><input type="checkbox" id="setTaxDefault"> Make every receipt a tax invoice</label>
+        <h3 data-i18n="taxHead">🧾 Tax (GST) invoice</h3>
+        <label><span data-i18n="legalName">Registered business name</span> <input id="setLegalName" placeholder="As on GST certificate" data-i18n-ph="asOnCert"></label>
+        <label><span data-i18n="tin">TIN / GST registration no.</span> <input id="setTin"></label>
+        <label><span data-i18n="gstRate">GST rate (%)</span> <input id="setGst" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="check"><input type="checkbox" id="setGstIncl"> <span data-i18n="gstIncl">My prices already include GST</span></label>
+        <label class="check"><input type="checkbox" id="setTaxDefault"> <span data-i18n="taxDefault">Make every receipt a tax invoice</span></label>
 
-        <button class="btn primary big">Save settings</button>
+        <button class="btn primary big" data-i18n="saveSettings">Save settings</button>
       </form>
-      <h3>Islands list</h3>
-      <p class="muted">New islands are added automatically when you save cargo.</p>
+      <h3>🌐 Customer tracking page</h3>
+      <p class="muted">Every receipt has a tracking link for the customer. They can also open this page and type their receipt number + last 4 digits of their phone.</p>
+      <div class="box"><code id="portalLink"></code></div>
+      <button type="button" class="btn wa big" id="portalShareBtn">Share tracking page on WhatsApp</button>
+
+      <h3 data-i18n="islandsList">Islands list</h3>
+      <p class="muted" data-i18n="islandsAuto">New islands are added automatically when you save cargo.</p>
       <div id="islandChips" class="chips"></div>
       <p class="muted center whoami"></p>
-      <button class="btn big danger-outline" id="logoutBtn">Logout</button>
+      <button class="btn big danger-outline" id="logoutBtn" data-i18n="logout">Logout</button>
     </div>
   </main>
 

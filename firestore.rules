@@ -43,6 +43,23 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // PUBLIC customer tracking copy. Anyone can open ONE receipt if they know
+    // "receiptNo-last4digitsOfPhone"; nobody can list or search them.
+    match /tracking/{id} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isMember(request.resource.data.boatId);
+      allow update: if isMember(resource.data.boatId) && request.resource.data.boatId == resource.data.boatId;
+      allow delete: if isMember(resource.data.boatId);
+    }
+
+    // PUBLIC boat position (only the boat's crew can write it)
+    match /boatpos/{boatId} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isMember(boatId);
+    }
+
     match /boats/{boatId} {
       allow get: if isAdmin() || isMember(boatId);
       allow list, create, delete: if isAdmin();

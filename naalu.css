@@ -39,9 +39,38 @@
 #lineForm .row > label { min-width: 0; }
 
 /* Dhivehi (Thaana) */
-.dv, .dv-ph::placeholder { font-family: "Noto Sans Thaana", "MV Faseyha", "Faruma", sans-serif; }
 .dv { direction: rtl; unicode-bidi: isolate; }
 .dv-ph:placeholder-shown { direction: rtl; }
 h4 .dv { display: inline-block; }
 .langbtn { border: 0; color: #fff; cursor: pointer; font-size: 13px; padding: 4px 12px; }
 .top .row { gap: 6px; }
+
+/* Location bar */
+.locbar { display: flex; gap: 8px; align-items: center; background: #fff; border-radius: var(--radius);
+  padding: 8px 10px; margin-bottom: 12px; border: 1.5px dashed var(--line); }
+.locbar.on { border: 1.5px solid #2f9e44; background: #f4fbf5; }
+.locbar.on #locStatus { color: #2b8a3e; font-weight: 600; }
+#portalLink { word-break: break-all; font-size: 13px; }
+
+/* ---------- Dhivehi font: Faruma ----------
+   Uses Faruma if it is installed on the phone, or if you put the font file in /fonts (see fonts/README.txt).
+   Otherwise falls back to Noto Sans Thaana (free, loaded from Google Fonts).
+   unicode-range = only Thaana letters use it, so English and numbers keep the normal font. */
+@font-face {
+  font-family: "FarumaThaana";
+  src: local("Faruma"), local("Faruma Regular"),
+       url("fonts/faruma.woff2") format("woff2"), url("fonts/faruma.ttf") format("truetype");
+  font-display: swap;
+  unicode-range: U+0780-07BF, U+060C, U+061B, U+061F, U+FDF2, U+FD3E-FD3F;
+}
+:root { --thaana: "FarumaThaana", "Faruma", "Noto Sans Thaana", "MV Faseyha", sans-serif; }
+body, input, button, select, textarea {
+  font-family: "FarumaThaana", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thaana", sans-serif;
+}
+.receipt { font-family: "FarumaThaana", ui-monospace, Menlo, monospace; }
+.dv, .dv-ph::placeholder, .langbtn { font-family: var(--thaana); }
+.dv { line-height: 1.6; }
+/* Dhivehi labels read right-to-left */
+label > span.dv, #rateValueLbl.dv { display: block; text-align: right; }
+.check:has(.dv) { flex-direction: row-reverse; justify-content: flex-start; text-align: right; }
+p.dv, h3.dv, .empty.dv { text-align: right; }
