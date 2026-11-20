@@ -21,3 +21,27 @@
 .cargo-row .grow b { font-size: 15px; }
 #billStatusSeg button.active { background: var(--brand); border-color: var(--brand); }
 .searchbar { top: 52px; }
+
+/* Voyage bar */
+.voyagebar { display: flex; gap: 8px; align-items: center; background: #fff; border-radius: var(--radius);
+  padding: 8px 10px; margin-bottom: 12px; border: 1.5px solid var(--brand); }
+.voyagebar > span { font-weight: 700; white-space: nowrap; color: var(--brand-dark); }
+.voyagebar select, .fullsel { flex: 1; min-width: 0; padding: 10px; font-size: 15px; border-radius: 10px;
+  border: 1px solid var(--line); background: #fff; color: var(--text); }
+.fullsel { width: 100%; margin-bottom: 8px; }
+.seg4 { display: grid; grid-template-columns: 1fr 1fr; }
+.check { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 15px; font-weight: 600; }
+.check input { width: 22px; height: 22px; margin: 0; accent-color: var(--brand); }
+.taxbox { padding: 10px 12px; }
+.chip.sel { background: var(--brand); color: #fff; }
+.cbm-out { margin: 0; font-weight: 700; color: var(--brand-dark); background: #e3f1f8; padding: 8px 10px; border-radius: 10px; }
+.size-row input:first-child { flex: 1; }
+#lineForm .row > label { min-width: 0; }
+
+/* Dhivehi (Thaana) */
+.dv, .dv-ph::placeholder { font-family: "Noto Sans Thaana", "MV Faseyha", "Faruma", sans-serif; }
+.dv { direction: rtl; unicode-bidi: isolate; }
+.dv-ph:placeholder-shown { direction: rtl; }
+h4 .dv { display: inline-block; }
+.langbtn { border: 0; color: #fff; cursor: pointer; font-size: 13px; padding: 4px 12px; }
+.top .row { gap: 6px; }

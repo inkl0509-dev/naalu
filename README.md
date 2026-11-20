@@ -4,16 +4,21 @@ A phone app for local goods-carrying boats. Crew record each parcel, box, motorc
 
 ## Features
 - **Receive cargo**: sender name and phone, receiver name and phone, and the island to send to. Phone numbers you have used before fill in the name automatically, and islands come from a saved list.
-- **Rates you set once** (🏷️ Rates tab):
-  - **Per kg**, e.g. Box MVR 5/kg. Weigh the box, type the kg and the amount is calculated.
+- **Rates you set once** (🏷️ Rates tab). Four ways to price:
+  - **Per kg**, e.g. Box MVR 5/kg. Type the weight and the amount is calculated.
   - **Per piece**, e.g. Motorcycle MVR 300, Cement bag MVR 15.
-  - **Minimum charge** (optional), e.g. small boxes are at least MVR 20.
-  - **Other item**: type any description and a fixed price, e.g. "Car – Toyota Vitz" MVR 2,500.
-  - Weight, pieces, rate and amount can all be changed for each item.
-- **Payment**: Cash, Transfer, or **Not paid** (the receiver pays when collecting). Unpaid cargo can be marked paid later.
+  - **Per CBM (cubic metre)**, e.g. Furniture MVR 400/CBM. Type length × width × height in **cm, inch, feet or metre** plus the number of pieces. The app works out the CBM (120×80×100 cm × 2 = 1.92 CBM) and the price.
+  - **By size**, e.g. Water tank: 500L = MVR 150, 1000L = MVR 250. Tap the size, then enter pieces.
+  - **Minimum charge** (optional) for any rate, e.g. at least MVR 20.
+  - **Other item**: any description and a fixed price, e.g. a car.
+  - CBM is optional. Use it only for the rates or items where you want it.
+- **Payment**: Cash, Transfer, **Card**, or **Not paid** (the receiver pays when collecting). Unpaid cargo can be marked paid later by cash, transfer or card.
+- **Tax (GST) invoice**: tick **Tax invoice** on a receipt, or make every receipt a tax invoice in Settings. The invoice shows "TAX INVOICE", your registered name and TIN, the customer's TIN (optional), the taxable value, **GST 8%** and the total. In Settings you choose whether your prices **already include GST** or GST is **added on top**. The rate can be changed.
+- **Voyages**: tap **+ New** on the Receive screen to start a voyage, e.g. "Voyage 12 · Malé → Thinadhoo · 21-11-2026". New cargo on **all crew phones** goes to that voyage. Accounts → **By voyage** shows that trip's billed amount, cash, transfer, card, unpaid, GST, kg, CBM, expenses (fuel, crew) and profit. You can **close** a voyage when the trip is finished. The Cargo tab can filter by voyage.
+- **ދިވެހި / English**: tap the **ދިވެހި** button at the top to switch the Receive screen labels to Dhivehi. Each phone remembers its own choice.
 - **Receipt**: send it to the **sender or receiver** on WhatsApp or Viber, print it, or print **box labels** showing the receiver, island, phone, "1 / 5", PAID or COLLECT, and a barcode.
 - **Cargo tab**: search by name, phone, island or receipt number, and filter by **Received / On boat / Delivered / Not paid**. Tap a receipt to change its status.
-- **Accounts**: Today, Yesterday, 7 days, This month or your own dates. Shows total billed, cash, transfer, not paid yet, kg carried, totals by island, expenses (fuel, crew, food) and profit. Downloads a CSV file for Excel.
+- **Accounts**: **by date** (Today, Yesterday, 7 days, This month, your own dates) or **by voyage**. Shows total billed, cash, transfer, card, not paid yet, GST, kg and CBM carried, totals by island, expenses and profit. Downloads a CSV file for Excel (opens correctly with Dhivehi names).
 - **Works offline at sea**: receipts save on the phone and sync when the signal returns.
 - **Many boats**: the admin (**iirufan@gmail.com**) creates a boat and gets a code. Crew join with the code. **Boats can never see each other's cargo or money**, and the admin cannot see it either. This is enforced by Firebase security rules on the server.
 
@@ -56,6 +61,8 @@ git push -u origin main
 - **Viber**: Viber doesn't let apps fill in a message for a specific number. The app **copies the receipt** and opens that person's Viber chat, where you **paste** it (long-press → Paste). If no phone number was entered, Viber opens a "share to" list instead.
 - **WhatsApp**: the message opens ready to send. You only press send.
 - Phone numbers: type the 7-digit number (e.g. 7771234). The app adds 960 automatically.
+- **Tax invoices**: the layout follows the usual GST invoice details (TAX INVOICE, your name and TIN, invoice number, date, customer, taxable value, GST and total). Confirm with MIRA or your accountant that it meets your exact requirements before relying on it.
+- **Upgrading from the first version**: paste the new `firestore.rules` into Firebase again. Old receipts keep working.
 - Box labels print best on A4 or a label printer. Choose how many labels when asked.
 
 ## Data layout (Firestore)
@@ -63,8 +70,9 @@ git push -u origin main
 admins/{userId}                 → extra admins (optional, added by hand)
 codes/{CODE}                    → boatId (secret join codes)
 users/{userId}                  → boatId this phone belongs to
-boats/{boatId}                  → name, phone, footer, islands[], code, active
-boats/{boatId}/rates/{id}       → name, mode (kg | piece), rate, min
+boats/{boatId}                  → name, phone, footer, islands[], code, active, tin, gstRate, currentVoyageId
+boats/{boatId}/rates/{id}       → name, mode (kg | piece | cbm | size), rate, min, sizes[]
+boats/{boatId}/voyages/{id}     → name, from, to, date, status (open | closed)
 boats/{boatId}/cargo/{id}       → receiptNo, sender, receiver, lines[], total, paid, status …
 boats/{boatId}/contacts/{phone} → saved names for auto-fill
 boats/{boatId}/expenses/{id}    → title, amount

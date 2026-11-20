@@ -49,9 +49,10 @@ service cloud.firestore {
       // Boat users can only change their own receipt settings + islands list
       allow update: if isAdmin() || (isMember(boatId)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name', 'phone', 'address', 'country', 'footer', 'islands']));
+             .hasOnly(['name', 'phone', 'address', 'country', 'footer', 'islands',
+                       'legalName', 'tin', 'gstRate', 'gstInclusive', 'taxDefault', 'currentVoyageId']));
 
-      // cargo, rates, contacts, expenses — ONLY this boat's users. Admin cannot read these.
+      // cargo, rates, voyages, contacts, expenses — ONLY this boat's users. Admin cannot read these.
       match /{sub}/{docId} {
         allow read, write: if isMember(boatId);
       }

@@ -10,6 +10,8 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="naalu.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thaana:wght@400;700&display=swap">
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script type="module" src="app.js"></script>
 </head>
@@ -81,45 +83,64 @@
 <section id="app" class="hidden">
   <header class="top">
     <span id="shopTitle">Naalu</span>
-    <span id="netStatus" class="pill hidden">Offline</span>
+    <span class="row">
+      <span id="netStatus" class="pill hidden">Offline</span>
+      <button id="langBtn" class="pill langbtn">ދިވެހި</button>
+    </span>
   </header>
 
   <main>
-    <!-- NEW CARGO -->
+    <!-- RECEIVE -->
     <div id="view-new" class="view">
+      <div class="voyagebar">
+        <span>🚢 Voyage</span>
+        <select id="voyageSel"></select>
+        <button type="button" class="btn small" id="newVoyageBtn">+ New</button>
+      </div>
+
       <form id="cargoForm" class="stack" autocomplete="off">
         <div class="box">
-          <h4>📤 Sender (customer)</h4>
-          <input id="sPhone" type="tel" inputmode="tel" placeholder="Sender phone" list="contactList">
-          <input id="sName" placeholder="Sender name" required>
+          <h4>📤 <span data-i18n="sender">Sender (customer)</span></h4>
+          <input id="sPhone" type="tel" inputmode="tel" placeholder="Sender phone" data-i18n-ph="senderPhone" list="contactList">
+          <input id="sName" placeholder="Sender name" data-i18n-ph="senderName" required>
         </div>
         <div class="box">
-          <h4>📥 Receiver</h4>
-          <input id="rPhone" type="tel" inputmode="tel" placeholder="Receiver phone" list="contactList">
-          <input id="rName" placeholder="Receiver name" required>
+          <h4>📥 <span data-i18n="receiver">Receiver</span></h4>
+          <input id="rName" placeholder="Receiver name" data-i18n-ph="receiverName" required>
+          <input id="rPhone" type="tel" inputmode="tel" placeholder="Receiver phone" data-i18n-ph="receiverPhone" list="contactList">
           <input id="rIsland" placeholder="Send to (island / place)" list="islandList" required>
         </div>
 
         <div class="box">
-          <h4>📦 Items <small class="muted">tap a rate to add</small></h4>
+          <h4>📦 <span data-i18n="items">Items – tap a rate to add</span></h4>
           <div id="rateChips" class="chips"></div>
           <div id="lineList" class="list"></div>
         </div>
 
         <input id="cNotes" placeholder="Notes (optional) e.g. fragile, keep dry">
 
-        <div class="row between grand"><span>TOTAL</span><b id="cTotal">MVR 0</b></div>
-
-        <div class="seg" id="paySeg">
-          <button type="button" data-pay="cash" class="active">💵 Cash</button>
-          <button type="button" data-pay="transfer">🏦 Transfer</button>
-          <button type="button" data-pay="unpaid">⏳ Not paid</button>
+        <div class="box taxbox">
+          <label class="check"><input type="checkbox" id="cTax"> <span>🧾 Tax invoice (GST <span id="gstRateLbl">8</span>%)</span></label>
+          <input id="cTin" class="hidden" placeholder="Customer TIN (optional, for GST-registered customers)">
         </div>
-        <input id="cRef" class="hidden" placeholder="Transfer ref (optional)">
+
+        <div id="totalsBox">
+          <div class="row between hidden" id="subRow"><span id="subLbl">Taxable value</span><b id="cSub"></b></div>
+          <div class="row between hidden" id="gstRow"><span id="gstLbl">GST</span><b id="cGst"></b></div>
+          <div class="row between grand"><span data-i18n="total">TOTAL</span><b id="cTotal">MVR 0</b></div>
+        </div>
+
+        <div class="seg seg4" id="paySeg">
+          <button type="button" data-pay="cash" class="active">💵 <span data-i18n="cash">Cash</span></button>
+          <button type="button" data-pay="transfer">🏦 <span data-i18n="transfer">Transfer</span></button>
+          <button type="button" data-pay="card">💳 <span data-i18n="card">Card</span></button>
+          <button type="button" data-pay="unpaid">⏳ <span data-i18n="unpaid">Not paid</span></button>
+        </div>
+        <input id="cRef" class="hidden" placeholder="Transfer / card ref (optional)">
         <p id="unpaidHint" class="muted hidden">Receiver will pay when collecting.</p>
 
-        <button class="btn primary big">✔ Save &amp; make receipt</button>
-        <button type="button" class="btn big" id="clearFormBtn">Clear form</button>
+        <button class="btn primary big" data-i18n="save">✔ Save &amp; make receipt</button>
+        <button type="button" class="btn big" id="clearFormBtn" data-i18n="clear">Clear form</button>
       </form>
       <datalist id="contactList"></datalist>
       <datalist id="islandList"></datalist>
@@ -130,6 +151,7 @@
       <div class="searchbar">
         <input id="cargoSearch" type="search" placeholder="Search name, phone, island, receipt no…" autocomplete="off">
       </div>
+      <select id="cargoVoyageSel" class="fullsel"></select>
       <div class="seg scroll" id="statusSeg">
         <button data-f="all" class="active">All</button>
         <button data-f="received">Received</button>
@@ -137,23 +159,30 @@
         <button data-f="delivered">Delivered</button>
         <button data-f="unpaid">Not paid</button>
       </div>
+      <div id="cargoSummary" class="muted"></div>
       <div id="cargoList" class="list"></div>
-      <p class="muted center">Showing latest 500 receipts. Use Accounts for older dates.</p>
+      <p class="muted center">Showing latest 500 receipts. Use Accounts for older ones.</p>
     </div>
 
     <!-- RATES -->
     <div id="view-rates" class="view hidden">
-      <p class="muted">Set your fixed prices once. Then tap them when receiving cargo.</p>
+      <p class="muted">Set your prices once. Then tap them when receiving cargo.</p>
       <form id="rateForm" class="box stack">
         <input id="rateName" placeholder="Item name, e.g. Box, Motorcycle, Cement bag" required>
-        <div class="seg" id="rateModeSeg">
+        <div class="seg scroll" id="rateModeSeg">
           <button type="button" data-mode="kg" class="active">⚖️ Per kg</button>
           <button type="button" data-mode="piece">🔢 Per piece</button>
+          <button type="button" data-mode="cbm">📐 Per CBM</button>
+          <button type="button" data-mode="size">📏 By size</button>
         </div>
-        <div class="row">
-          <label>Price (MVR) <input id="rateValue" type="number" inputmode="decimal" min="0" step="any" required></label>
-          <label>Minimum (MVR) <small>(optional)</small><input id="rateMin" type="number" inputmode="decimal" min="0" step="any"></label>
+        <div class="row" id="rateValueRow">
+          <label><span id="rateValueLbl">Price per kg (MVR)</span><input id="rateValue" type="number" inputmode="decimal" min="0" step="any"></label>
         </div>
+        <div id="sizeEditor" class="hidden stack">
+          <div id="sizeRows" class="stack"></div>
+          <button type="button" class="btn small" id="addSizeBtn">+ Add size</button>
+        </div>
+        <label>Minimum charge (MVR) <small>(optional)</small><input id="rateMin" type="number" inputmode="decimal" min="0" step="any"></label>
         <div class="row">
           <button type="button" class="btn hidden" id="rateCancel">Cancel</button>
           <button class="btn primary grow" id="rateSave">+ Add rate</button>
@@ -164,18 +193,31 @@
 
     <!-- ACCOUNTS -->
     <div id="view-accounts" class="view hidden">
-      <div class="seg scroll" id="periodSeg">
-        <button data-p="today" class="active">Today</button>
-        <button data-p="yesterday">Yesterday</button>
-        <button data-p="week">7 Days</button>
-        <button data-p="month">This Month</button>
-        <button data-p="custom">Custom</button>
+      <div class="seg" id="acctModeSeg">
+        <button data-am="dates" class="active">📅 By date</button>
+        <button data-am="voyage">🚢 By voyage</button>
       </div>
-      <div id="customRange" class="row hidden">
-        <input type="date" id="fromDate">
-        <input type="date" id="toDate">
-        <button class="btn" id="applyRange">Go</button>
+
+      <div id="acctDates">
+        <div class="seg scroll" id="periodSeg">
+          <button data-p="today" class="active">Today</button>
+          <button data-p="yesterday">Yesterday</button>
+          <button data-p="week">7 Days</button>
+          <button data-p="month">This Month</button>
+          <button data-p="custom">Custom</button>
+        </div>
+        <div id="customRange" class="row hidden">
+          <input type="date" id="fromDate">
+          <input type="date" id="toDate">
+          <button class="btn" id="applyRange">Go</button>
+        </div>
       </div>
+
+      <div id="acctVoyage" class="hidden stack">
+        <select id="acctVoyageSel" class="fullsel"></select>
+        <div class="row wrap" id="voyageActions"></div>
+      </div>
+
       <div id="stats" class="stats"></div>
 
       <h3>Expenses</h3>
@@ -184,6 +226,7 @@
         <input id="expAmount" type="number" inputmode="decimal" placeholder="MVR" required min="0" step="any" class="narrow">
         <button class="btn primary">Add</button>
       </form>
+      <p class="muted" id="expVoyageNote"></p>
       <div id="expenseList" class="list"></div>
 
       <h3>By island</h3>
@@ -201,6 +244,14 @@
         <label>Home island / office <input id="setAddress"></label>
         <label>Country code (Maldives = 960) <input id="setCountry" inputmode="numeric"></label>
         <label>Receipt footer message <input id="setFooter"></label>
+
+        <h3>🧾 Tax (GST) invoice</h3>
+        <label>Registered business name <input id="setLegalName" placeholder="As on GST certificate"></label>
+        <label>TIN / GST registration no. <input id="setTin"></label>
+        <label>GST rate (%) <input id="setGst" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="check"><input type="checkbox" id="setGstIncl"> My prices already include GST</label>
+        <label class="check"><input type="checkbox" id="setTaxDefault"> Make every receipt a tax invoice</label>
+
         <button class="btn primary big">Save settings</button>
       </form>
       <h3>Islands list</h3>
@@ -227,25 +278,61 @@
   <form class="sheet" id="lineForm">
     <div class="sheet-head"><h2 id="lineTitle">Add item</h2><button type="button" class="x" data-close>✕</button></div>
     <label>Description <input id="lDesc" required placeholder="e.g. Box of clothes, Honda motorcycle"></label>
-    <div class="seg" id="lineModeSeg">
-      <button type="button" data-mode="kg">⚖️ By weight</button>
-      <button type="button" data-mode="piece">🔢 By pieces</button>
-      <button type="button" data-mode="fixed">✍️ Fixed price</button>
+    <div class="seg scroll" id="lineModeSeg">
+      <button type="button" data-mode="kg">⚖️ Weight</button>
+      <button type="button" data-mode="piece">🔢 Pieces</button>
+      <button type="button" data-mode="cbm">📐 CBM</button>
+      <button type="button" data-mode="size">📏 Size</button>
+      <button type="button" data-mode="fixed">✍️ Fixed</button>
     </div>
-    <div class="row" id="lQtyRow">
-      <label id="lQtyLabel">Weight (kg) <input id="lQty" type="number" inputmode="decimal" min="0" step="any"></label>
-      <label id="lRateLabel">Rate (MVR/kg) <input id="lRate" type="number" inputmode="decimal" min="0" step="any"></label>
+
+    <div id="lSizeBox" class="chips hidden"></div>
+
+    <div id="lDimBox" class="hidden stack">
+      <div class="row">
+        <label>Length <input id="lL" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label>Width <input id="lW" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label>Height <input id="lH" type="number" inputmode="decimal" min="0" step="any"></label>
+      </div>
+      <div class="seg" id="unitSeg">
+        <button type="button" data-u="cm" class="active">cm</button>
+        <button type="button" data-u="in">inch</button>
+        <button type="button" data-u="ft">feet</button>
+        <button type="button" data-u="m">metre</button>
+      </div>
     </div>
+
+    <div class="row">
+      <label id="lWeightLbl">Weight (kg) <input id="lWeight" type="number" inputmode="decimal" min="0" step="any"></label>
+      <label id="lPcsLbl">Pieces <input id="lPcs" type="number" inputmode="numeric" min="0" step="1"></label>
+      <label id="lRateLbl"><span id="lRateTxt">Rate</span> <input id="lRate" type="number" inputmode="decimal" min="0" step="any"></label>
+    </div>
+    <p id="lCbmOut" class="cbm-out hidden"></p>
     <p id="lMinNote" class="muted hidden"></p>
     <label>Amount (MVR) <input id="lAmount" type="number" inputmode="decimal" min="0" step="any" required class="amount-big"></label>
     <button class="btn primary big">Add to receipt</button>
   </form>
 </div>
 
+<!-- New voyage -->
+<div id="voyageModal" class="modal hidden">
+  <form class="sheet" id="voyageForm">
+    <div class="sheet-head"><h2>New voyage</h2><button type="button" class="x" data-close>✕</button></div>
+    <label>Voyage name / no. <input id="vName" required></label>
+    <div class="row">
+      <label>From <input id="vFrom" list="islandList" placeholder="e.g. Malé"></label>
+      <label>To <input id="vTo" list="islandList" placeholder="e.g. Thinadhoo"></label>
+    </div>
+    <label>Departure date <input id="vDate" type="date" required></label>
+    <p class="muted">New cargo on all crew phones will be added to this voyage.</p>
+    <button class="btn primary big">Start voyage</button>
+  </form>
+</div>
+
 <!-- Receipt -->
 <div id="billModal" class="modal hidden">
   <div class="sheet">
-    <div class="sheet-head"><h2>Receipt</h2><button class="x" data-close>✕</button></div>
+    <div class="sheet-head"><h2 id="billTitle">Receipt</h2><button class="x" data-close>✕</button></div>
     <pre id="billText" class="receipt"></pre>
 
     <div id="statusBox">
@@ -255,10 +342,11 @@
         <button data-s="loaded">🚤 On boat</button>
         <button data-s="delivered">✅ Delivered</button>
       </div>
-      <div id="payNowBox" class="row hidden">
+      <div id="payNowBox" class="row wrap hidden">
         <span class="grow"><b>Not paid yet</b></span>
         <button class="btn small" data-paynow="cash">Paid cash</button>
         <button class="btn small" data-paynow="transfer">Paid transfer</button>
+        <button class="btn small" data-paynow="card">Paid card</button>
       </div>
     </div>
 

@@ -26,12 +26,14 @@ const db = initializeFirestore(fbApp, {
 // ---------------- State ----------------
 const DEFAULT_BOAT = {
   name: "My Boat", phone: "", address: "", country: "960",
-  footer: "Thank you for choosing us 🚤", islands: []
+  footer: "Thank you for choosing us 🚤", islands: [],
+  legalName: "", tin: "", gstRate: 8, gstInclusive: false, taxDefault: false, currentVoyageId: ""
 };
 const S = {
   uid: null, boatId: null,
   boat: { ...DEFAULT_BOAT },
-  rates: [], cargo: [], contacts: new Map(),
+  rates: [], cargo: [], contacts: new Map(), voyages: [],
+  acctMode: "dates", acctVoyageId: "",
   lines: [], payment: "cash",
   line: null,              // line being edited in modal
   rateMode: "kg", editRateId: null,
@@ -186,6 +188,7 @@ async function startBoat(boatId) {
   S.boat = { ...DEFAULT_BOAT, ...snap.data() };
   showScreen("#app");
   applyBoat();
+  clearForm();
 
   S.unsub.push(onSnapshot(doc(db, "boats", boatId), (d) => {
     if (d.exists()) { S.boat = { ...DEFAULT_BOAT, ...d.data() }; applyBoat(); }
@@ -198,6 +201,10 @@ async function startBoat(boatId) {
     S.cargo = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     renderCargoList();
     if (S.bill) { const fresh = S.cargo.find((c) => c.id === S.bill.id); if (fresh) refreshBill(fresh); }
+  }, onListenErr));
+  S.unsub.push(onSnapshot(query(col("voyages"), orderBy("createdAtMs", "desc")), (snap) => {
+    S.voyages = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderVoyageSelects();
   }, onListenErr));
   S.unsub.push(onSnapshot(col("contacts"), (snap) => {
     S.contacts = new Map(snap.docs.map((d) => [d.id, d.data().name]));
@@ -215,8 +222,94 @@ $$(".bottomnav button").forEach((b) => b.addEventListener("click", () => {
   window.scrollTo(0, 0);
 }));
 
+// ---------------- LANGUAGE (English / Dhivehi) ----------------
+const DV = {
+  sender: "ފޮނުވާ ފަރާތް (ކަސްޓަމަރު)",
+  senderPhone: "ފޮނުވާ ފަރާތުގެ ފޯނު ނަންބަރު",
+  senderName: "ފޮނުވާ ފަރާތުގެ ނަން",
+  receiver: "ލިބޭ ފަރާތް",
+  receiverName: "ލިބޭ ފަރާތުގެ ނަން",
+  receiverPhone: "ލިބޭ ފަރާތުގެ ފޯނު ނަންބަރު",
+  items: "އައިޓަމްތައް، އިތުރުކުރުމަށް ރޭޓަށް ފިތާލާ",
+  otherItem: "އެހެނިހެން އައިޓަމް",
+  noItems: "އަދި އެއްވެސް އައިޓަމެއް ނެތް",
+  total: "ޖުމްލަ",
+  cash: "ނަގުދު ފައިސާ",
+  transfer: "ޓްރާންސްފަރ",
+  unpaid: "ފައިސާ ނުދައްކާ",
+  card: "ކާޑު",
+  save: "ސޭވްކޮށް ރަސީދު ހަދާ",
+  clear: "ފޯމު ހުސްކުރޭ",
+};
+const EN = { otherItem: "＋ Other item", noItems: "No items yet" };
+let LANG = "en";
+try { LANG = localStorage.getItem("naalu-lang") || "en"; } catch {}
+const t = (k) => (LANG === "dv" && DV[k]) || EN[k] || k;
+
+function applyLang() {
+  const dv = LANG === "dv";
+  $$("[data-i18n]").forEach((el) => {
+    if (el.dataset.en === undefined) el.dataset.en = el.textContent;
+    el.textContent = dv && DV[el.dataset.i18n] ? DV[el.dataset.i18n] : el.dataset.en;
+    el.classList.toggle("dv", dv);
+  });
+  $$("[data-i18n-ph]").forEach((el) => {
+    if (el.dataset.enPh === undefined) el.dataset.enPh = el.placeholder;
+    el.placeholder = dv && DV[el.dataset.i18nPh] ? DV[el.dataset.i18nPh] : el.dataset.enPh;
+    el.classList.toggle("dv-ph", dv);
+  });
+  $("#langBtn").textContent = dv ? "EN" : "ދިވެހި";
+  $("#langBtn").classList.toggle("dv", !dv);
+  renderRateChips(); renderLines();
+}
+$("#langBtn").addEventListener("click", () => {
+  LANG = LANG === "dv" ? "en" : "dv";
+  try { localStorage.setItem("naalu-lang", LANG); } catch {}
+  applyLang();
+});
+
+// ---------------- VOYAGES ----------------
+const voyageById = (id) => S.voyages.find((v) => v.id === id);
+const voyageLabel = (v) => v ? `${v.name}${v.from || v.to ? ` · ${v.from || "?"} → ${v.to || "?"}` : ""}${v.date ? ` · ${v.date.split("-").reverse().join("-")}` : ""}` : "";
+
+function renderVoyageSelects() {
+  const cur = S.boat.currentVoyageId || "";
+  const open = S.voyages.filter((v) => v.status !== "closed" || v.id === cur);
+  $("#voyageSel").innerHTML = `<option value="">— No voyage —</option>` +
+    open.map((v) => `<option value="${v.id}" ${v.id === cur ? "selected" : ""}>${esc(voyageLabel(v))}</option>`).join("");
+  const all = S.voyages.map((v) => `<option value="${v.id}">${esc(voyageLabel(v))}${v.status === "closed" ? " (closed)" : ""}</option>`).join("");
+  const cv = $("#cargoVoyageSel").value;
+  $("#cargoVoyageSel").innerHTML = `<option value="">🚢 All voyages</option>` + all;
+  $("#cargoVoyageSel").value = voyageById(cv) ? cv : "";
+  const av = S.acctVoyageId || cur || S.voyages[0]?.id || "";
+  $("#acctVoyageSel").innerHTML = all || `<option value="">No voyages yet</option>`;
+  $("#acctVoyageSel").value = av;
+}
+$("#voyageSel").addEventListener("change", () => {
+  updateDoc(doc(db, "boats", S.boatId), { currentVoyageId: $("#voyageSel").value }).catch(fail);
+  S.boat.currentVoyageId = $("#voyageSel").value;
+  toast($("#voyageSel").value ? "Voyage selected for new cargo" : "No voyage selected");
+});
+$("#newVoyageBtn").addEventListener("click", () => {
+  $("#vName").value = `Voyage ${S.voyages.length + 1}`;
+  $("#vFrom").value = S.boat.address || ""; $("#vTo").value = "";
+  $("#vDate").value = toDateInput(new Date());
+  openModal("#voyageModal");
+});
+$("#voyageForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const ref = doc(col("voyages"));
+  setDoc(ref, {
+    name: $("#vName").value.trim(), from: $("#vFrom").value.trim(), to: $("#vTo").value.trim(),
+    date: $("#vDate").value, status: "open", createdAtMs: Date.now(),
+  }).catch(fail);
+  updateDoc(doc(db, "boats", S.boatId), { currentVoyageId: ref.id }).catch(fail);
+  S.boat.currentVoyageId = ref.id;
+  $("#voyageModal").classList.add("hidden");
+  toast("Voyage started 🚢");
+});
+
 // ---------------- RECEIVE CARGO ----------------
-// Auto-fill name when a known phone number is typed
 function autofill(phoneSel, nameSel) {
   $(phoneSel).addEventListener("change", () => {
     const p = $(phoneSel).value.replace(/\D/g, "");
@@ -227,108 +320,196 @@ function autofill(phoneSel, nameSel) {
 autofill("#sPhone", "#sName");
 autofill("#rPhone", "#rName");
 
+const MODE_UNIT = { kg: "/kg", piece: "/pc", cbm: "/CBM" };
 function renderRateChips() {
-  $("#rateChips").innerHTML = S.rates.map((r) =>
-    `<button type="button" class="chip" data-rate="${r.id}"><b>${esc(r.name)}</b><small>${num(r.rate)}${r.mode === "kg" ? "/kg" : "/pc"}</small></button>`
-  ).join("") + `<button type="button" class="chip other" data-rate="">＋ Other item</button>`;
+  $("#rateChips").innerHTML = S.rates.map((r) => {
+    const sub = r.mode === "size"
+      ? (r.sizes || []).map((z) => z.name).join(" · ")
+      : `${num(r.rate)}${MODE_UNIT[r.mode] || ""}`;
+    return `<button type="button" class="chip" data-rate="${r.id}"><b>${esc(r.name)}</b><small>${esc(sub)}</small></button>`;
+  }).join("") + `<button type="button" class="chip other ${LANG === "dv" ? "dv" : ""}" data-rate="">${t("otherItem")}</button>`;
 }
 $("#rateChips").addEventListener("click", (e) => {
   const b = e.target.closest(".chip"); if (!b) return;
   const r = S.rates.find((x) => x.id === b.dataset.rate);
-  openLine(r ? { desc: r.name, mode: r.mode, rate: r.rate, min: r.min || 0, qty: "" }
-             : { desc: "", mode: "fixed", rate: "", min: 0, qty: "" }, -1);
+  openLine(r ? { desc: r.name, mode: r.mode, rate: r.mode === "size" ? "" : r.rate, min: r.min || 0, sizes: r.sizes || [] }
+             : { desc: "", mode: "fixed", rate: "", min: 0, sizes: [] }, -1);
 });
 
 // --- Item line modal ---
+const UNIT_M = { cm: 0.01, in: 0.0254, ft: 0.3048, m: 1 };
+const round3 = (n) => Math.round((Number(n) || 0) * 1000) / 1000;
+
 function openLine(line, index) {
-  S.line = { ...line, index };
+  S.line = { ...line, index, origMode: line.mode, origRate: line.rate, unit: line.dims?.unit || "cm", size: line.size || "" };
   $("#lineTitle").textContent = index >= 0 ? "Edit item" : "Add item";
-  $("#lDesc").value = line.desc;
-  $("#lQty").value = line.mode === "kg" ? (line.weight ?? line.qty ?? "") : (line.qty ?? "");
+  $("#lDesc").value = line.desc || "";
+  $("#lWeight").value = line.weight || "";
+  $("#lPcs").value = line.qty || (line.mode === "fixed" ? "" : (index >= 0 ? line.qty : 1));
+  $("#lL").value = line.dims?.l || ""; $("#lW").value = line.dims?.w || ""; $("#lH").value = line.dims?.h || "";
   $("#lRate").value = line.rate ?? "";
   $("#lAmount").value = line.amount ?? "";
-  setLineMode(line.mode);
+  setUnit(S.line.unit);
+  setLineMode(line.mode, true);
   openModal("#lineModal");
-  setTimeout(() => (line.desc ? $(line.mode === "fixed" ? "#lAmount" : "#lQty") : $("#lDesc")).focus(), 80);
+  const focus = { kg: "#lWeight", piece: "#lPcs", cbm: "#lL", size: "#lPcs", fixed: "#lAmount" }[line.mode];
+  setTimeout(() => $(line.desc ? focus : "#lDesc").focus(), 80);
 }
-function setLineMode(mode) {
-  S.line.mode = mode;
+function setUnit(u) {
+  S.line.unit = u;
+  $$("#unitSeg button").forEach((b) => b.classList.toggle("active", b.dataset.u === u));
+  calcLine();
+}
+$("#unitSeg").addEventListener("click", (e) => { if (e.target.dataset.u) setUnit(e.target.dataset.u); });
+
+function setLineMode(mode, initial) {
+  const L = S.line;
+  if (!initial) $("#lRate").value = mode === L.origMode ? (L.origRate ?? "") : "";
+  L.mode = mode;
   $$("#lineModeSeg button").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
-  $("#lQtyRow").classList.toggle("hidden", mode === "fixed");
-  $("#lQtyLabel").firstChild.textContent = mode === "kg" ? "Weight (kg) " : "Pieces ";
-  $("#lRateLabel").firstChild.textContent = mode === "kg" ? "Rate (MVR/kg) " : "Price each (MVR) ";
-  $("#lQty").step = mode === "kg" ? "any" : "1";
+  $('#lineModeSeg [data-mode="size"]').classList.toggle("hidden", !(L.sizes || []).length);
+  $("#lWeightLbl").classList.toggle("hidden", mode !== "kg");
+  $("#lPcsLbl").classList.toggle("hidden", mode === "kg" || mode === "fixed");
+  $("#lRateLbl").classList.toggle("hidden", mode === "fixed");
+  $("#lDimBox").classList.toggle("hidden", mode !== "cbm");
+  $("#lCbmOut").classList.toggle("hidden", mode !== "cbm");
+  $("#lSizeBox").classList.toggle("hidden", mode !== "size");
+  $("#lRateTxt").textContent = { kg: "Rate per kg", piece: "Price each", cbm: "Rate per CBM", size: "Price each" }[mode] || "Rate";
+  if (mode === "size") renderSizeButtons();
   calcLine();
 }
 $("#lineModeSeg").addEventListener("click", (e) => { if (e.target.dataset.mode) setLineMode(e.target.dataset.mode); });
 
+function renderSizeButtons() {
+  const L = S.line;
+  $("#lSizeBox").innerHTML = (L.sizes || []).map((z) =>
+    `<button type="button" class="chip ${z.name === L.size ? "sel" : ""}" data-size="${esc(z.name)}"><b>${esc(z.name)}</b><small>${num(z.price)}</small></button>`).join("");
+}
+$("#lSizeBox").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-size]"); if (!b) return;
+  const z = S.line.sizes.find((x) => x.name === b.dataset.size); if (!z) return;
+  S.line.size = z.name;
+  $("#lRate").value = z.price;
+  renderSizeButtons(); calcLine();
+});
+
+function lineCbm() {
+  const f = UNIT_M[S.line.unit] || 0.01;
+  const each = (Number($("#lL").value) || 0) * f * (Number($("#lW").value) || 0) * f * (Number($("#lH").value) || 0) * f;
+  return { each, total: round3(each * (Number($("#lPcs").value) || 0)) };
+}
 function calcLine() {
   const L = S.line; if (!L) return;
   if (L.mode === "fixed") { $("#lMinNote").classList.add("hidden"); return; }
-  const q = Number($("#lQty").value) || 0, r = Number($("#lRate").value) || 0;
-  let amt = round2(q * r);
+  const r = Number($("#lRate").value) || 0;
+  const pcs = Number($("#lPcs").value) || 0;
+  let qty = 0;
+  if (L.mode === "kg") qty = Number($("#lWeight").value) || 0;
+  else if (L.mode === "cbm") {
+    const c = lineCbm(); qty = c.total;
+    $("#lCbmOut").textContent = c.total ? `= ${round3(c.each)} CBM each × ${pcs} = ${c.total} CBM` : "Enter length, width, height and pieces";
+  } else qty = pcs;
+  let amt = round2(qty * r);
   const min = Number(L.min) || 0;
-  const useMin = min > 0 && q > 0 && amt < min;
+  const useMin = min > 0 && qty > 0 && amt < min;
   if (useMin) amt = min;
   $("#lMinNote").textContent = useMin ? `Minimum charge ${money(min)} applied` : "";
   $("#lMinNote").classList.toggle("hidden", !useMin);
-  $("#lAmount").value = q && r ? amt : "";
+  $("#lAmount").value = qty && r ? amt : "";
 }
-$("#lQty").addEventListener("input", calcLine);
-$("#lRate").addEventListener("input", calcLine);
+["#lWeight", "#lPcs", "#lRate", "#lL", "#lW", "#lH"].forEach((s) => $(s).addEventListener("input", calcLine));
 
 $("#lineForm").addEventListener("submit", (e) => {
   e.preventDefault();
-  const L = S.line;
-  const q = Number($("#lQty").value) || 0;
+  const L = S.line, m = L.mode;
+  const pcs = Number($("#lPcs").value) || 0;
   const line = {
-    desc: $("#lDesc").value.trim(),
-    mode: L.mode,
-    qty: L.mode === "piece" ? q : (L.mode === "fixed" ? 1 : 0),
-    weight: L.mode === "kg" ? q : 0,
-    rate: L.mode === "fixed" ? 0 : Number($("#lRate").value) || 0,
+    desc: $("#lDesc").value.trim(), mode: m,
+    qty: m === "fixed" ? 1 : (m === "kg" ? 0 : pcs),
+    weight: m === "kg" ? Number($("#lWeight").value) || 0 : 0,
+    rate: m === "fixed" ? 0 : Number($("#lRate").value) || 0,
     min: Number(L.min) || 0,
+    sizes: L.sizes || [],
     amount: round2($("#lAmount").value),
   };
+  if (m === "cbm") {
+    line.dims = { l: Number($("#lL").value) || 0, w: Number($("#lW").value) || 0, h: Number($("#lH").value) || 0, unit: L.unit };
+    line.cbm = lineCbm().total;
+    if (!line.cbm) return toast("Enter length, width, height and pieces");
+  }
+  if (m === "size") {
+    if (!L.size) return toast("Choose a size");
+    line.size = L.size;
+  }
   if (!line.desc) return toast("Enter description");
-  if (L.mode !== "fixed" && !q) return toast(L.mode === "kg" ? "Enter weight" : "Enter number of pieces");
+  if (m === "kg" && !line.weight) return toast("Enter weight");
+  if ((m === "piece" || m === "size") && !pcs) return toast("Enter number of pieces");
+  if (!line.amount && line.amount !== 0) return toast("Enter amount");
   if (L.index >= 0) S.lines[L.index] = line; else S.lines.push(line);
   $("#lineModal").classList.add("hidden");
   renderLines();
 });
 
 function lineLabel(l) {
-  const minNote = l.min && l.amount === l.min && round2((l.weight || l.qty) * l.rate) < l.min ? " (min charge)" : "";
-  if (l.mode === "kg") return `${num(l.weight)} kg × ${num(l.rate)}${minNote}`;
-  if (l.mode === "piece") return `${num(l.qty)} pc${l.qty === 1 ? "" : "s"} × ${num(l.rate)}${minNote}`;
-  return "Fixed price";
+  const base = l.mode === "cbm" ? l.cbm : (l.mode === "kg" ? l.weight : l.qty);
+  const minNote = l.min && l.amount === l.min && round2(base * l.rate) < l.min ? " (min charge)" : "";
+  const pcs = (n) => `${num(n)} pc${n === 1 ? "" : "s"}`;
+  switch (l.mode) {
+    case "kg": return `${num(l.weight)} kg × ${num(l.rate)}${minNote}`;
+    case "piece": return `${pcs(l.qty)} × ${num(l.rate)}${minNote}`;
+    case "cbm": return `${l.dims.l}×${l.dims.w}×${l.dims.h} ${l.dims.unit} × ${pcs(l.qty)} = ${l.cbm} CBM × ${num(l.rate)}${minNote}`;
+    case "size": return `${l.size} × ${pcs(l.qty)} @ ${num(l.rate)}${minNote}`;
+    default: return "Fixed price";
+  }
 }
-const linesTotal = () => round2(S.lines.reduce((s, l) => s + l.amount, 0));
+const linesSubtotal = () => round2(S.lines.reduce((s, l) => s + l.amount, 0));
+
+// GST: either added on top, or already inside prices (Settings)
+function computeTotals(subtotal, tax) {
+  if (!tax) return { taxable: subtotal, gst: 0, total: subtotal, gstRate: 0 };
+  const rate = Number(S.boat.gstRate) || 0;
+  if (S.boat.gstInclusive) {
+    const gst = round2(subtotal * rate / (100 + rate));
+    return { taxable: round2(subtotal - gst), gst, total: subtotal, gstRate: rate };
+  }
+  const gst = round2(subtotal * rate / 100);
+  return { taxable: subtotal, gst, total: round2(subtotal + gst), gstRate: rate };
+}
 
 function renderLines() {
   $("#lineList").innerHTML = S.lines.map((l, i) => `
     <div class="line tap" data-i="${i}">
-      <div class="grow"><b>${esc(l.desc)}</b><div class="muted">${lineLabel(l)}</div></div>
+      <div class="grow"><b>${esc(l.desc)}</b><div class="muted">${esc(lineLabel(l))}</div></div>
       <b>${num(l.amount)}</b>
       <button type="button" class="x" data-del="${i}">✕</button>
-    </div>`).join("") || `<div class="empty small">No items yet</div>`;
-  $("#cTotal").textContent = money(linesTotal());
+    </div>`).join("") || `<div class="empty small ${LANG === "dv" ? "dv" : ""}">${t("noItems")}</div>`;
+  const tax = $("#cTax").checked;
+  const T = computeTotals(linesSubtotal(), tax);
+  $("#subRow").classList.toggle("hidden", !tax);
+  $("#gstRow").classList.toggle("hidden", !tax);
+  $("#cSub").textContent = money(T.taxable);
+  $("#gstLbl").textContent = `GST ${T.gstRate}%${S.boat.gstInclusive ? " (included)" : ""}`;
+  $("#cGst").textContent = money(T.gst);
+  $("#cTotal").textContent = money(T.total);
 }
 $("#lineList").addEventListener("click", (e) => {
   if (e.target.dataset.del !== undefined) { S.lines.splice(+e.target.dataset.del, 1); renderLines(); return; }
   const row = e.target.closest(".line"); if (row) openLine(S.lines[+row.dataset.i], +row.dataset.i);
 });
+$("#cTax").addEventListener("change", () => { $("#cTin").classList.toggle("hidden", !$("#cTax").checked); renderLines(); });
 
 function setPayment(p) {
   S.payment = p;
   $$("#paySeg button").forEach((b) => b.classList.toggle("active", b.dataset.pay === p));
-  $("#cRef").classList.toggle("hidden", p !== "transfer");
+  $("#cRef").classList.toggle("hidden", !(p === "transfer" || p === "card"));
   $("#unpaidHint").classList.toggle("hidden", p !== "unpaid");
 }
-$("#paySeg").addEventListener("click", (e) => { if (e.target.dataset.pay) setPayment(e.target.dataset.pay); });
+$("#paySeg").addEventListener("click", (e) => { const b = e.target.closest("[data-pay]"); if (b) setPayment(b.dataset.pay); });
 
 function clearForm() {
   $("#cargoForm").reset();
+  $("#cTax").checked = !!S.boat.taxDefault;
+  $("#cTin").classList.toggle("hidden", !$("#cTax").checked);
   S.lines = []; renderLines(); setPayment("cash");
 }
 $("#clearFormBtn").addEventListener("click", () => { if (confirm("Clear this form?")) clearForm(); });
@@ -346,31 +527,35 @@ $("#cargoForm").addEventListener("submit", (e) => {
   const rPhone = $("#rPhone").value.replace(/\D/g, "");
   const island = $("#rIsland").value.trim();
   const paid = S.payment !== "unpaid";
+  const tax = $("#cTax").checked;
+  const subtotal = linesSubtotal();
+  const T = computeTotals(subtotal, tax);
+  const v = voyageById(S.boat.currentVoyageId);
   const cargo = {
     receiptNo: makeReceiptNo(now),
-    sender: { name: $("#sName").value.trim(), phone: sPhone },
+    sender: { name: $("#sName").value.trim(), phone: sPhone, tin: tax ? $("#cTin").value.trim() : "" },
     receiver: { name: $("#rName").value.trim(), phone: rPhone, island },
-    lines: S.lines,
-    pieces: S.lines.reduce((s, l) => s + (l.mode === "piece" ? l.qty : 1), 0),
+    lines: S.lines.map(({ sizes, ...l }) => l),
+    pieces: S.lines.reduce((s, l) => s + (l.mode === "kg" || l.mode === "fixed" ? 1 : l.qty), 0),
     weight: round2(S.lines.reduce((s, l) => s + (l.weight || 0), 0)),
-    total: linesTotal(),
-    payment: S.payment,
-    paid,
+    cbm: round3(S.lines.reduce((s, l) => s + (l.cbm || 0), 0)),
+    subtotal,
+    tax, gstRate: T.gstRate, gstInclusive: !!S.boat.gstInclusive, taxable: T.taxable, gst: T.gst,
+    total: T.total,
+    payment: S.payment, paid,
     paidMethod: paid ? S.payment : "",
     paidAtMs: paid ? now.getTime() : 0,
-    ref: S.payment === "transfer" ? $("#cRef").value.trim() : "",
+    ref: S.payment === "transfer" || S.payment === "card" ? $("#cRef").value.trim() : "",
     notes: $("#cNotes").value.trim(),
-    status: "received",
-    statusAtMs: now.getTime(),
+    voyageId: v ? v.id : "", voyageName: v ? voyageLabel(v) : "",
+    status: "received", statusAtMs: now.getTime(),
     createdBy: auth.currentUser?.email || "",
-    createdAtMs: now.getTime(),
-    createdAt: serverTimestamp(),
+    createdAtMs: now.getTime(), createdAt: serverTimestamp(),
   };
   const ref = doc(col("cargo"));
   setDoc(ref, cargo).catch(fail);   // not awaited: works offline
   cargo.id = ref.id;
 
-  // remember contacts + island for next time
   if (sPhone) setDoc(doc(col("contacts"), sPhone), { name: cargo.sender.name, updatedAt: Date.now() }).catch(() => {});
   if (rPhone) setDoc(doc(col("contacts"), rPhone), { name: cargo.receiver.name, updatedAt: Date.now() }).catch(() => {});
   if (island && !(S.boat.islands || []).includes(island))
@@ -382,11 +567,21 @@ $("#cargoForm").addEventListener("submit", (e) => {
 });
 
 // ---------------- RECEIPT ----------------
+const PAYNAME = { cash: "Cash", transfer: "Bank Transfer", card: "Card" };
 function receiptText(c) {
-  const L = [`*${S.boat.name}*`];
+  const L = [];
+  if (c.tax) {
+    L.push("*TAX INVOICE*", `*${S.boat.legalName || S.boat.name}*`);
+    if (S.boat.legalName && S.boat.legalName !== S.boat.name) L.push(S.boat.name);
+    if (S.boat.tin) L.push(`TIN: ${S.boat.tin}`);
+  } else L.push(`*${S.boat.name}*`);
+  if (S.boat.address) L.push(S.boat.address);
   if (S.boat.phone) L.push(`📞 ${S.boat.phone}`);
-  L.push(`Receipt #${c.receiptNo}`, fmtDateTime(new Date(c.createdAtMs)), "--------------------------");
+  L.push(`${c.tax ? "Invoice" : "Receipt"} #${c.receiptNo}`, fmtDateTime(new Date(c.createdAtMs)));
+  if (c.voyageName) L.push(`Voyage: ${c.voyageName}`);
+  L.push("--------------------------");
   L.push(`From: ${c.sender.name}${c.sender.phone ? ` (${c.sender.phone})` : ""}`);
+  if (c.tax && c.sender.tin) L.push(`Customer TIN: ${c.sender.tin}`);
   L.push(`To: ${c.receiver.name}${c.receiver.phone ? ` (${c.receiver.phone})` : ""}`);
   L.push(`Island: ${c.receiver.island}`, "--------------------------");
   c.lines.forEach((l) => {
@@ -394,8 +589,12 @@ function receiptText(c) {
     else L.push(`${l.desc}\n   ${lineLabel(l)} = ${num(l.amount)}`);
   });
   L.push("--------------------------");
+  if (c.tax) {
+    L.push(`Taxable value: ${money(c.taxable)}`);
+    L.push(`GST ${c.gstRate}%${c.gstInclusive ? " (included)" : ""}: ${money(c.gst)}`);
+  }
   L.push(`*TOTAL: ${money(c.total)}*`);
-  if (c.paid) L.push(`✅ Paid – ${c.paidMethod === "transfer" ? "Bank Transfer" : "Cash"}${c.ref ? ` (${c.ref})` : ""}`);
+  if (c.paid) L.push(`✅ Paid – ${PAYNAME[c.paidMethod] || c.paidMethod}${c.ref ? ` (${c.ref})` : ""}`);
   else L.push(`⏳ NOT PAID – collect ${money(c.total)} from receiver`);
   L.push(`Status: ${STATUS[c.status] || c.status}`);
   if (c.notes) L.push(`Note: ${c.notes}`);
@@ -403,19 +602,15 @@ function receiptText(c) {
   return L.join("\n");
 }
 
-function showBill(c) {
-  S.bill = c;
-  refreshBill(c);
-  openModal("#billModal");
-}
+function showBill(c) { refreshBill(c); openModal("#billModal"); }
 function refreshBill(c) {
   S.bill = c;
+  $("#billTitle").textContent = c.tax ? "Tax invoice" : "Receipt";
   $("#billText").textContent = receiptText(c);
   $$("#billStatusSeg button").forEach((b) => b.classList.toggle("active", b.dataset.s === c.status));
   $("#payNowBox").classList.toggle("hidden", !!c.paid);
   $("#billDeleteBtn").classList.toggle("hidden", !c.id);
 }
-// Close receipt → forget it so list updates don't re-open it
 new MutationObserver(() => { if ($("#billModal").classList.contains("hidden")) S.bill = null; })
   .observe($("#billModal"), { attributes: true, attributeFilter: ["class"] });
 
@@ -436,19 +631,19 @@ $("#payNowBox").addEventListener("click", (e) => {
 $("#billModal").addEventListener("click", async (e) => {
   const how = e.target.dataset.send; if (!how || !S.bill) return;
   const c = S.bill;
-  const toReceiver = how.endsWith("receiver");
-  const phone = normalizePhone(toReceiver ? c.receiver.phone : c.sender.phone);
+  const phone = normalizePhone(how.endsWith("receiver") ? c.receiver.phone : c.sender.phone);
   const text = receiptText(c);
   if (how.startsWith("wa")) {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
   } else {
     // Viber can't reliably pre-fill text for a number: copy receipt, open the chat, user pastes
-    try { await navigator.clipboard.writeText(text.replace(/\*/g, "")); } catch {}
+    const plain = text.replace(/\*/g, "");
+    try { await navigator.clipboard.writeText(plain); } catch {}
     if (phone) {
       toast("Receipt copied – paste it in Viber");
-      location.href = `viber://chat?number=%2B${phone}&draft=${encodeURIComponent(text.replace(/\*/g, ""))}`;
+      location.href = `viber://chat?number=%2B${phone}&draft=${encodeURIComponent(plain)}`;
     } else {
-      location.href = `viber://forward?text=${encodeURIComponent(text.replace(/\*/g, ""))}`;
+      location.href = `viber://forward?text=${encodeURIComponent(plain)}`;
     }
   }
 });
@@ -461,7 +656,7 @@ function printWindow(title, body, css) {
   w.document.close();
 }
 $("#billPrintBtn").addEventListener("click", () => {
-  printWindow("Receipt " + S.bill.receiptNo,
+  printWindow((S.bill.tax ? "Tax invoice " : "Receipt ") + S.bill.receiptNo,
     `<pre>${esc(receiptText(S.bill).replace(/\*/g, ""))}</pre>`,
     "body{font:13px monospace;width:72mm;margin:0 auto;padding:6px}pre{white-space:pre-wrap;margin:0}");
 });
@@ -478,6 +673,7 @@ $("#labelPrintBtn").addEventListener("click", () => {
       <div class="isl">${esc(c.receiver.island)}</div>
       <div>📞 ${esc(c.receiver.phone)}</div>
       <div class="sm">From: ${esc(c.sender.name)} ${esc(c.sender.phone)}</div>
+      ${c.voyageName ? `<div class="sm">🚢 ${esc(c.voyageName)}</div>` : ""}
       <div class="row"><b>${i + 1} / ${n}</b><span>${c.paid ? "PAID" : "COLLECT " + esc(money(c.total))}</span></div>
       ${bc}
       <div class="sm">${esc(S.boat.name)}</div>
@@ -500,8 +696,8 @@ function cargoRow(c) {
   return `<div class="line tap cargo-row" data-id="${c.id}">
     <div class="grow">
       <b>${esc(c.receiver.name)}</b> <span class="isl-tag">${esc(c.receiver.island)}</span>
-      <div class="muted">From ${esc(c.sender.name)} · #${esc(c.receiptNo)}</div>
-      <div class="muted">${fmtDateTime(new Date(c.createdAtMs))} · ${c.lines.length} item${c.lines.length === 1 ? "" : "s"}</div>
+      <div class="muted">From ${esc(c.sender.name)} · #${esc(c.receiptNo)}${c.tax ? " · 🧾" : ""}</div>
+      <div class="muted">${fmtDateTime(new Date(c.createdAtMs))} · ${c.lines.length} item${c.lines.length === 1 ? "" : "s"}${c.voyageName ? ` · 🚢 ${esc(c.voyageName.split(" · ")[0])}` : ""}</div>
     </div>
     <div class="right">
       <b>${money(c.total)}</b>
@@ -512,15 +708,20 @@ function cargoRow(c) {
 }
 function renderCargoList() {
   const q = $("#cargoSearch").value.trim().toLowerCase();
+  const vid = $("#cargoVoyageSel").value;
   const list = S.cargo.filter((c) => {
+    if (vid && c.voyageId !== vid) return false;
     if (S.filter === "unpaid" ? c.paid : (S.filter !== "all" && c.status !== S.filter)) return false;
     if (!q) return true;
     return [c.receiptNo, c.sender.name, c.sender.phone, c.receiver.name, c.receiver.phone, c.receiver.island, c.notes]
       .join(" ").toLowerCase().includes(q);
   });
+  const tot = round2(list.reduce((s, c) => s + c.total, 0));
+  $("#cargoSummary").textContent = list.length ? `${list.length} receipt${list.length === 1 ? "" : "s"} · ${money(tot)}` : "";
   $("#cargoList").innerHTML = list.map(cargoRow).join("") || `<div class="empty">No cargo found</div>`;
 }
 $("#cargoSearch").addEventListener("input", renderCargoList);
+$("#cargoVoyageSel").addEventListener("change", renderCargoList);
 $("#statusSeg").addEventListener("click", (e) => {
   const f = e.target.dataset.f; if (!f) return;
   S.filter = f;
@@ -533,46 +734,73 @@ $("#cargoList").addEventListener("click", (e) => {
 });
 
 // ---------------- RATES ----------------
+const RATE_LBL = { kg: "Price per kg (MVR)", piece: "Price per piece (MVR)", cbm: "Price per CBM (MVR)" };
 function setRateMode(m) {
   S.rateMode = m;
   $$("#rateModeSeg button").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
+  $("#rateValueRow").classList.toggle("hidden", m === "size");
+  $("#sizeEditor").classList.toggle("hidden", m !== "size");
+  $("#rateValueLbl").textContent = RATE_LBL[m] || "";
+  if (m === "size" && !$("#sizeRows").children.length) ["Small", "Medium", "Large"].forEach((n) => addSizeRow(n, ""));
 }
 $("#rateModeSeg").addEventListener("click", (e) => { if (e.target.dataset.mode) setRateMode(e.target.dataset.mode); });
 
+function addSizeRow(name, price) {
+  const row = document.createElement("div");
+  row.className = "row size-row";
+  row.innerHTML = `<input placeholder="Size name e.g. Large / 20ft" value="${esc(name)}">
+    <input type="number" inputmode="decimal" min="0" step="any" placeholder="MVR" class="narrow" value="${esc(price)}">
+    <button type="button" class="x">✕</button>`;
+  row.querySelector(".x").addEventListener("click", () => row.remove());
+  $("#sizeRows").appendChild(row);
+}
+$("#addSizeBtn").addEventListener("click", () => addSizeRow("", ""));
+const readSizes = () => [...$$("#sizeRows .size-row")].map((r) => {
+  const [n, p] = r.querySelectorAll("input");
+  return { name: n.value.trim(), price: Number(p.value) || 0 };
+}).filter((z) => z.name);
+
 function renderRateList() {
+  const desc = (r) => r.mode === "size"
+    ? (r.sizes || []).map((z) => `${esc(z.name)} ${num(z.price)}`).join(" · ")
+    : { kg: "Per kg", piece: "Per piece", cbm: "Per CBM (m³)" }[r.mode];
   $("#rateList").innerHTML = S.rates.map((r) => `
     <div class="line tap" data-id="${r.id}">
       <div class="grow"><b>${esc(r.name)}</b>
-        <div class="muted">${r.mode === "kg" ? "Per kg" : "Per piece"}${r.min ? ` · min ${money(r.min)}` : ""}</div></div>
-      <b>${money(r.rate)}${r.mode === "kg" ? "/kg" : ""}</b>
+        <div class="muted">${desc(r)}${r.min ? ` · min ${money(r.min)}` : ""}</div></div>
+      ${r.mode === "size" ? "<b>📏</b>" : `<b>${money(r.rate)}${MODE_UNIT[r.mode] || ""}</b>`}
       <button class="x" data-del-rate="${r.id}">🗑</button>
-    </div>`).join("") || `<div class="empty">No rates yet. Examples: Box (per kg), Motorcycle (per piece), Cement bag (per piece).</div>`;
+    </div>`).join("") || `<div class="empty">No rates yet. Examples: Box (per kg), Motorcycle (per piece), Furniture (per CBM), Container (by size).</div>`;
 }
 function resetRateForm() {
-  S.editRateId = null; $("#rateForm").reset(); setRateMode("kg");
+  S.editRateId = null; $("#rateForm").reset(); $("#sizeRows").innerHTML = ""; setRateMode("kg");
   $("#rateSave").textContent = "+ Add rate"; $("#rateCancel").classList.add("hidden");
 }
 $("#rateCancel").addEventListener("click", resetRateForm);
 $("#rateList").addEventListener("click", (e) => {
   const del = e.target.dataset.delRate;
-  if (del) {
-    if (confirm("Delete this rate?")) deleteDoc(doc(col("rates"), del)).catch(fail);
-    return;
-  }
+  if (del) { if (confirm("Delete this rate?")) deleteDoc(doc(col("rates"), del)).catch(fail); return; }
   const row = e.target.closest(".line"); if (!row) return;
   const r = S.rates.find((x) => x.id === row.dataset.id); if (!r) return;
   S.editRateId = r.id;
-  $("#rateName").value = r.name; $("#rateValue").value = r.rate; $("#rateMin").value = r.min || "";
+  $("#rateName").value = r.name; $("#rateValue").value = r.rate || ""; $("#rateMin").value = r.min || "";
+  $("#sizeRows").innerHTML = "";
+  (r.sizes || []).forEach((z) => addSizeRow(z.name, z.price));
   setRateMode(r.mode);
   $("#rateSave").textContent = "Save changes"; $("#rateCancel").classList.remove("hidden");
   window.scrollTo(0, 0);
 });
 $("#rateForm").addEventListener("submit", (e) => {
   e.preventDefault();
+  const m = S.rateMode;
   const data = {
-    name: $("#rateName").value.trim(), mode: S.rateMode,
-    rate: Number($("#rateValue").value) || 0, min: Number($("#rateMin").value) || 0,
+    name: $("#rateName").value.trim(), mode: m,
+    rate: m === "size" ? 0 : Number($("#rateValue").value) || 0,
+    min: Number($("#rateMin").value) || 0,
+    sizes: m === "size" ? readSizes() : [],
   };
+  if (m === "size" && !data.sizes.length) return toast("Add at least one size");
+  if (m !== "size" && !$("#rateValue").value) return toast("Enter the price");
   const ref = S.editRateId ? doc(col("rates"), S.editRateId) : doc(col("rates"));
   setDoc(ref, data).catch(fail);
   toast(S.editRateId ? "Rate updated" : "Rate added");
@@ -590,12 +818,20 @@ function periodRange() {
     case "month": return [new Date(now.getFullYear(), now.getMonth(), 1), new Date(now.getFullYear(), now.getMonth() + 1, 1)];
     case "custom": {
       const f = $("#fromDate").value ? new Date($("#fromDate").value + "T00:00") : sod;
-      const t = $("#toDate").value ? new Date($("#toDate").value + "T00:00") : sod;
-      return [f, addDays(t, 1)];
+      const tt = $("#toDate").value ? new Date($("#toDate").value + "T00:00") : sod;
+      return [f, addDays(tt, 1)];
     }
     default: return [sod, addDays(sod, 1)];
   }
 }
+$("#acctModeSeg").addEventListener("click", (e) => {
+  const m = e.target.dataset.am; if (!m) return;
+  S.acctMode = m;
+  $$("#acctModeSeg button").forEach((b) => b.classList.toggle("active", b.dataset.am === m));
+  $("#acctDates").classList.toggle("hidden", m !== "dates");
+  $("#acctVoyage").classList.toggle("hidden", m !== "voyage");
+  loadAccounts();
+});
 $("#periodSeg").addEventListener("click", (e) => {
   const p = e.target.dataset.p; if (!p) return;
   S.period = p;
@@ -609,53 +845,97 @@ $("#periodSeg").addEventListener("click", (e) => {
   loadAccounts();
 });
 $("#applyRange").addEventListener("click", loadAccounts);
+$("#acctVoyageSel").addEventListener("change", () => { S.acctVoyageId = $("#acctVoyageSel").value; loadAccounts(); });
+
+function renderVoyageActions() {
+  const v = voyageById(S.acctVoyageId);
+  if (!v) { $("#voyageActions").innerHTML = ""; return; }
+  const isCur = S.boat.currentVoyageId === v.id;
+  $("#voyageActions").innerHTML = `
+    <span class="tag ${v.status === "closed" ? "offtag" : "cash"}">${v.status === "closed" ? "Closed" : "Open"}${isCur ? " · current" : ""}</span>
+    ${isCur ? "" : `<button class="btn small" data-va="current">Use for new cargo</button>`}
+    <button class="btn small" data-va="toggle">${v.status === "closed" ? "Reopen" : "Close voyage"}</button>`;
+}
+$("#voyageActions").addEventListener("click", (e) => {
+  const a = e.target.dataset.va; const v = voyageById(S.acctVoyageId); if (!a || !v) return;
+  if (a === "current") {
+    updateDoc(doc(db, "boats", S.boatId), { currentVoyageId: v.id }).catch(fail);
+    S.boat.currentVoyageId = v.id; toast("New cargo will go to this voyage");
+  } else {
+    const closing = v.status !== "closed";
+    updateDoc(doc(col("voyages"), v.id), { status: closing ? "closed" : "open" }).catch(fail);
+    if (closing && S.boat.currentVoyageId === v.id) {
+      updateDoc(doc(db, "boats", S.boatId), { currentVoyageId: "" }).catch(fail);
+      S.boat.currentVoyageId = "";
+    }
+    toast(closing ? "Voyage closed" : "Voyage reopened");
+  }
+  setTimeout(renderVoyageActions, 200);
+});
 
 async function loadAccounts() {
   if (!S.boatId) return;
-  const [from, to] = periodRange().map((d) => d.getTime());
-  const rangeQ = (name) => query(col(name), where("createdAtMs", ">=", from), where("createdAtMs", "<", to), orderBy("createdAtMs", "desc"));
   let cargo = [], expenses = [];
+  const byVoyage = S.acctMode === "voyage";
   try {
-    const [cs, es] = await Promise.all([getDocs(rangeQ("cargo")), getDocs(rangeQ("expenses"))]);
-    cargo = cs.docs.map((d) => ({ id: d.id, ...d.data() }));
-    expenses = es.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (byVoyage) {
+      S.acctVoyageId = $("#acctVoyageSel").value;
+      renderVoyageActions();
+      $("#expVoyageNote").textContent = S.acctVoyageId ? "Expenses added here go to this voyage." : "";
+      if (!S.acctVoyageId) { cargo = []; expenses = []; }
+      else {
+        const vq = (name) => query(col(name), where("voyageId", "==", S.acctVoyageId));
+        const [cs, es] = await Promise.all([getDocs(vq("cargo")), getDocs(vq("expenses"))]);
+        cargo = cs.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => b.createdAtMs - a.createdAtMs);
+        expenses = es.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => b.createdAtMs - a.createdAtMs);
+      }
+    } else {
+      const cur = voyageById(S.boat.currentVoyageId);
+      $("#expVoyageNote").textContent = cur ? `Expenses added here also go to voyage: ${voyageLabel(cur)}` : "";
+      const [from, to] = periodRange().map((d) => d.getTime());
+      const rangeQ = (name) => query(col(name), where("createdAtMs", ">=", from), where("createdAtMs", "<", to), orderBy("createdAtMs", "desc"));
+      const [cs, es] = await Promise.all([getDocs(rangeQ("cargo")), getDocs(rangeQ("expenses"))]);
+      cargo = cs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      expenses = es.docs.map((d) => ({ id: d.id, ...d.data() }));
+    }
   } catch (e) { return fail(e); }
   S.periodCargo = cargo;
 
   const sum = (arr, f) => round2(arr.reduce((s, x) => s + (Number(f(x)) || 0), 0));
+  const paidBy = (m) => sum(cargo.filter((c) => c.paid && c.paidMethod === m), (c) => c.total);
   const billed = sum(cargo, (c) => c.total);
-  const cash = sum(cargo.filter((c) => c.paid && c.paidMethod === "cash"), (c) => c.total);
-  const transfer = sum(cargo.filter((c) => c.paid && c.paidMethod === "transfer"), (c) => c.total);
+  const cash = paidBy("cash"), transfer = paidBy("transfer"), card = paidBy("card");
   const unpaid = sum(cargo.filter((c) => !c.paid), (c) => c.total);
+  const gst = sum(cargo, (c) => c.gst);
   const kg = sum(cargo, (c) => c.weight);
+  const cbm = round3(cargo.reduce((s, c) => s + (c.cbm || 0), 0));
   const exp = sum(expenses, (e) => e.amount);
-  const collected = cash + transfer;
-  const net = collected - exp;
+  const gstPaid = sum(cargo.filter((c) => c.paid), (c) => c.gst);
+  const net = round2(cash + transfer + card - gstPaid - exp);
 
   const stat = (label, value, cls = "") => `<div class="stat ${cls}"><span>${label}</span><b>${value}</b></div>`;
   $("#stats").innerHTML =
     stat("Total billed", money(billed), "big") +
     stat("Receipts", cargo.length) +
-    stat("Weight carried", `${num(kg)} kg`) +
-    stat("💵 Cash received", money(cash)) +
-    stat("🏦 Transfer received", money(transfer)) +
+    stat("Carried", `${num(kg)} kg · ${num(cbm)} CBM`) +
+    stat("💵 Cash", money(cash)) +
+    stat("🏦 Transfer", money(transfer)) +
+    stat("💳 Card", money(card)) +
     stat("⏳ Not paid yet", money(unpaid), unpaid ? "bad" : "") +
+    stat("🧾 GST on invoices", money(gst)) +
     stat("Expenses", money(exp)) +
-    stat("Profit (received − expenses)", money(net), net >= 0 ? "good big" : "bad big");
+    stat("Profit (received − GST − expenses)", money(net), net >= 0 ? "good big" : "bad big");
 
   const agg = {};
-  cargo.forEach((c) => {
-    const a = agg[c.receiver.island || "-"] ||= { n: 0, amt: 0 };
-    a.n++; a.amt += c.total;
-  });
+  cargo.forEach((c) => { const a = agg[c.receiver.island || "-"] ||= { n: 0, amt: 0 }; a.n++; a.amt += c.total; });
   $("#byIsland").innerHTML = Object.entries(agg).sort((a, b) => b[1].amt - a[1].amt).map(([isl, a]) =>
     `<div class="line"><div class="grow">${esc(isl)}</div><span class="muted">${a.n} receipt${a.n === 1 ? "" : "s"}</span><b>${money(a.amt)}</b></div>`
-  ).join("") || `<div class="empty">No cargo in this period</div>`;
+  ).join("") || `<div class="empty">No cargo here yet</div>`;
 
   $("#billList").innerHTML = cargo.map(cargoRow).join("") || `<div class="empty">No receipts</div>`;
   $("#expenseList").innerHTML = expenses.map((e) => `
     <div class="line">
-      <div class="grow">${esc(e.title)}<div class="muted">${fmtDateTime(new Date(e.createdAtMs))}</div></div>
+      <div class="grow">${esc(e.title)}<div class="muted">${fmtDateTime(new Date(e.createdAtMs))}${e.voyageName ? ` · 🚢 ${esc(e.voyageName.split(" · ")[0])}` : ""}</div></div>
       <b>${money(e.amount)}</b><button class="x" data-del-exp="${e.id}">🗑</button>
     </div>`).join("") || `<div class="empty">No expenses</div>`;
 }
@@ -665,8 +945,10 @@ $("#billList").addEventListener("click", (e) => {
 });
 $("#expenseForm").addEventListener("submit", (e) => {
   e.preventDefault();
+  const v = voyageById(S.acctMode === "voyage" ? S.acctVoyageId : S.boat.currentVoyageId);
   setDoc(doc(col("expenses")), {
     title: $("#expTitle").value.trim(), amount: Number($("#expAmount").value) || 0,
+    voyageId: v ? v.id : "", voyageName: v ? voyageLabel(v) : "",
     createdAtMs: Date.now(), createdAt: serverTimestamp(),
   }).catch(fail);
   $("#expTitle").value = ""; $("#expAmount").value = "";
@@ -679,18 +961,21 @@ $("#expenseList").addEventListener("click", (e) => {
   setTimeout(loadAccounts, 300);
 });
 $("#exportCsv").addEventListener("click", () => {
-  if (!S.periodCargo.length) return toast("No receipts in this period");
+  if (!S.periodCargo.length) return toast("No receipts here");
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const rows = [["Receipt", "Date", "Sender", "Sender phone", "Receiver", "Receiver phone", "Island",
-    "Item", "Weight kg", "Pieces", "Rate", "Amount", "Receipt total", "Paid", "Method", "Status"]];
-  S.periodCargo.forEach((c) => c.lines.forEach((l) => rows.push([
-    c.receiptNo, fmtDateTime(new Date(c.createdAtMs)), c.sender.name, c.sender.phone, c.receiver.name, c.receiver.phone,
-    c.receiver.island, l.desc, l.weight || "", l.mode === "piece" ? l.qty : "", l.rate || "", l.amount, c.total,
+  const rows = [["Receipt", "Date", "Voyage", "Sender", "Sender phone", "Receiver", "Receiver phone", "Island",
+    "Item", "Pricing", "Weight kg", "CBM", "Size", "Pieces", "Rate", "Amount",
+    "Tax invoice", "Taxable", "GST", "Receipt total", "Paid", "Method", "Status"]];
+  S.periodCargo.forEach((c) => c.lines.forEach((l, i) => rows.push([
+    c.receiptNo, fmtDateTime(new Date(c.createdAtMs)), c.voyageName, c.sender.name, c.sender.phone, c.receiver.name,
+    c.receiver.phone, c.receiver.island, l.desc, l.mode, l.weight || "", l.cbm || "", l.size || "",
+    l.mode === "kg" || l.mode === "fixed" ? "" : l.qty, l.rate || "", l.amount,
+    c.tax ? "Yes" : "No", i === 0 ? c.taxable ?? c.total : "", i === 0 ? c.gst || 0 : "", i === 0 ? c.total : "",
     c.paid ? "Yes" : "No", c.paidMethod, c.status])));
-  const blob = new Blob([rows.map((r) => r.map(q).join(",")).join("\n")], { type: "text/csv" });
+  const blob = new Blob(["﻿" + rows.map((r) => r.map(q).join(",")).join("\n")], { type: "text/csv" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `naalu-${S.period}-${toDateInput(new Date())}.csv`;
+  a.download = `naalu-${S.acctMode === "voyage" ? "voyage" : S.period}-${toDateInput(new Date())}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 });
@@ -704,6 +989,9 @@ function applyBoat() {
   $("#islandChips").innerHTML = islands.map((i) =>
     `<span class="chip static">${esc(i)} <button class="x" data-del-isl="${esc(i)}">✕</button></span>`).join("")
     || `<span class="muted">None yet</span>`;
+  $("#gstRateLbl").textContent = Number(S.boat.gstRate) || 0;
+  renderVoyageSelects();
+  renderLines();
 }
 $("#islandChips").addEventListener("click", (e) => {
   const isl = e.target.dataset.delIsl; if (isl === undefined) return;
@@ -715,6 +1003,11 @@ function fillSettings() {
   $("#setAddress").value = S.boat.address;
   $("#setCountry").value = S.boat.country;
   $("#setFooter").value = S.boat.footer;
+  $("#setLegalName").value = S.boat.legalName || "";
+  $("#setTin").value = S.boat.tin || "";
+  $("#setGst").value = S.boat.gstRate ?? 8;
+  $("#setGstIncl").checked = !!S.boat.gstInclusive;
+  $("#setTaxDefault").checked = !!S.boat.taxDefault;
 }
 $("#settingsForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -724,9 +1017,16 @@ $("#settingsForm").addEventListener("submit", (e) => {
     address: $("#setAddress").value.trim(),
     country: $("#setCountry").value.replace(/\D/g, "") || "960",
     footer: $("#setFooter").value.trim(),
+    legalName: $("#setLegalName").value.trim(),
+    tin: $("#setTin").value.trim(),
+    gstRate: Number($("#setGst").value) || 0,
+    gstInclusive: $("#setGstIncl").checked,
+    taxDefault: $("#setTaxDefault").checked,
   };
+  const taxDefaultChanged = changes.taxDefault !== !!S.boat.taxDefault;
   S.boat = { ...S.boat, ...changes };
   updateDoc(doc(db, "boats", S.boatId), changes).catch(fail);
+  if (taxDefaultChanged && !S.lines.length) { $("#cTax").checked = changes.taxDefault; $("#cTin").classList.toggle("hidden", !changes.taxDefault); }
   applyBoat();
   toast("Settings saved ✔");
 });
@@ -813,4 +1113,4 @@ $("#shopList").addEventListener("click", async (e) => {
   } catch (err) { fail(err); }
 });
 
-renderLines();
+applyLang();
