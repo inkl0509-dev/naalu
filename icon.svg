@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0b6e99"/>
+  <!-- sun -->
+  <circle cx="390" cy="120" r="34" fill="#ffd43b"/>
+  <!-- cabin -->
+  <rect x="300" y="196" width="78" height="80" rx="8" fill="#ffffff"/>
+  <rect x="314" y="212" width="22" height="20" rx="3" fill="#74c0fc"/><rect x="344" y="212" width="22" height="20" rx="3" fill="#74c0fc"/>
+  <!-- cargo boxes -->
+  <rect x="126" y="214" width="62" height="62" rx="5" fill="#e8a24a"/>
+  <rect x="194" y="214" width="62" height="62" rx="5" fill="#d9822b"/>
+  <rect x="160" y="156" width="62" height="58" rx="5" fill="#f0b866"/>
+  <path d="M157 214 v62 M225 214 v62 M191 156 v58" stroke="#8a4b12" stroke-width="5"/>
+  <!-- hull (dhoni style, raised bow) -->
+  <path d="M76 276 L436 276 L400 352 L120 352 Z" fill="#c92a2a"/>
+  <path d="M76 276 L60 236 L96 276 Z" fill="#c92a2a"/>
+  <rect x="96" y="294" width="320" height="10" fill="#ffffff"/>
+  <!-- waves -->
+  <path d="M40 388 q36 -24 72 0 t72 0 t72 0 t72 0 t72 0 t72 0" fill="none" stroke="#a5d8ff" stroke-width="16" stroke-linecap="round"/>
+  <path d="M76 432 q36 -22 72 0 t72 0 t72 0 t72 0 t72 0" fill="none" stroke="#74c0fc" stroke-width="12" stroke-linecap="round"/>
+</svg>
