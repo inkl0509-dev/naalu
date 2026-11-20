@@ -1,1 +1,71 @@
-# naalu
+# 🚤 Naalu — cargo receipts for local boats
+
+A phone app for local goods-carrying boats. Crew record each parcel, box, motorcycle, car or load of building materials, collect the money, and send the receipt to the customer on **WhatsApp or Viber**. All amounts are in **MVR**.
+
+## Features
+- **Receive cargo**: sender name and phone, receiver name and phone, and the island to send to. Phone numbers you have used before fill in the name automatically, and islands come from a saved list.
+- **Rates you set once** (🏷️ Rates tab):
+  - **Per kg**, e.g. Box MVR 5/kg. Weigh the box, type the kg and the amount is calculated.
+  - **Per piece**, e.g. Motorcycle MVR 300, Cement bag MVR 15.
+  - **Minimum charge** (optional), e.g. small boxes are at least MVR 20.
+  - **Other item**: type any description and a fixed price, e.g. "Car – Toyota Vitz" MVR 2,500.
+  - Weight, pieces, rate and amount can all be changed for each item.
+- **Payment**: Cash, Transfer, or **Not paid** (the receiver pays when collecting). Unpaid cargo can be marked paid later.
+- **Receipt**: send it to the **sender or receiver** on WhatsApp or Viber, print it, or print **box labels** showing the receiver, island, phone, "1 / 5", PAID or COLLECT, and a barcode.
+- **Cargo tab**: search by name, phone, island or receipt number, and filter by **Received / On boat / Delivered / Not paid**. Tap a receipt to change its status.
+- **Accounts**: Today, Yesterday, 7 days, This month or your own dates. Shows total billed, cash, transfer, not paid yet, kg carried, totals by island, expenses (fuel, crew, food) and profit. Downloads a CSV file for Excel.
+- **Works offline at sea**: receipts save on the phone and sync when the signal returns.
+- **Many boats**: the admin (**iirufan@gmail.com**) creates a boat and gets a code. Crew join with the code. **Boats can never see each other's cargo or money**, and the admin cannot see it either. This is enforced by Firebase security rules on the server.
+
+## Setup
+
+### 1. Firebase (make a NEW project just for Naalu)
+1. Go to https://console.firebase.google.com and click **Add project**, e.g. "naalu".
+2. Open **Authentication → Get started** and turn on **Email/Password**.
+3. Open **Firestore Database → Create database** and choose **Production mode**.
+4. In **Firestore → Rules**, paste everything from `firestore.rules` and click **Publish**.
+5. Open **Project settings → Your apps → Web (</>)** and register an app. Copy the config into `firebase-config.js`.
+
+The free Spark plan is enough. Storage is not needed.
+
+### 2. GitHub
+```bash
+git init
+git add .
+git commit -m "Naalu"
+git branch -M main
+git remote add origin https://github.com/YOUR_NAME/naalu.git
+git push -u origin main
+```
+
+### 3. Vercel
+1. Go to https://vercel.com, click **Add New → Project** and import `naalu`. Set Framework to **Other** with no build command, then click **Deploy**.
+2. In Firebase, open **Authentication → Settings → Authorized domains** and add your Vercel domain, e.g. `naalu.vercel.app`.
+
+### 4. Admin login (one time)
+1. Open the app and press **Create new account** with `iirufan@gmail.com`.
+2. Press **Send verification link**, tap the link in Gmail, then press **I clicked the link ✔**.
+3. On the Admin screen, type a boat name and press **+ Create**, then **Share code** to send it on WhatsApp to the boat owner.
+
+### 5. On each crew phone
+1. Open the link in Chrome or Safari and choose **Add to Home screen**.
+2. Create an account, enter the boat code, and you're in.
+3. First go to **🏷️ Rates** and add your prices, then **⚙️ Settings** for the boat name and phone.
+
+## Notes
+- **Viber**: Viber doesn't let apps fill in a message for a specific number. The app **copies the receipt** and opens that person's Viber chat, where you **paste** it (long-press → Paste). If no phone number was entered, Viber opens a "share to" list instead.
+- **WhatsApp**: the message opens ready to send. You only press send.
+- Phone numbers: type the 7-digit number (e.g. 7771234). The app adds 960 automatically.
+- Box labels print best on A4 or a label printer. Choose how many labels when asked.
+
+## Data layout (Firestore)
+```
+admins/{userId}                 → extra admins (optional, added by hand)
+codes/{CODE}                    → boatId (secret join codes)
+users/{userId}                  → boatId this phone belongs to
+boats/{boatId}                  → name, phone, footer, islands[], code, active
+boats/{boatId}/rates/{id}       → name, mode (kg | piece), rate, min
+boats/{boatId}/cargo/{id}       → receiptNo, sender, receiver, lines[], total, paid, status …
+boats/{boatId}/contacts/{phone} → saved names for auto-fill
+boats/{boatId}/expenses/{id}    → title, amount
+```

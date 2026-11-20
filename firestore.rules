@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // App owner: iirufan@gmail.com (email must be verified), or anyone added by hand to /admins
+    function isAdmin() {
+      return signedIn() && (
+        (request.auth.token.email == 'iirufan@gmail.com' && request.auth.token.email_verified == true)
+        || exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // A user belongs to a boat only if users/{uid} says so AND the boat is turned on
+    function isMember(boatId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.boatId == boatId
+        && get(/databases/$(database)/documents/boats/$(boatId)).data.active == true;
+    }
+
+    match /admins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+
+    // Boat codes: anyone logged in can check ONE code they typed; only admin can list/create
+    match /codes/{code} {
+      allow get: if signedIn();
+      allow list, create, delete: if isAdmin();
+      allow update: if false;
+    }
+
+    // Which boat each user belongs to. You can only join by giving a real code for that boat.
+    match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['boatId', 'code', 'email', 'joinedAt'])
+        && get(/databases/$(database)/documents/codes/$(request.resource.data.code)).data.boatId == request.resource.data.boatId;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /boats/{boatId} {
+      allow get: if isAdmin() || isMember(boatId);
+      allow list, create, delete: if isAdmin();
+      // Boat users can only change their own receipt settings + islands list
+      allow update: if isAdmin() || (isMember(boatId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name', 'phone', 'address', 'country', 'footer', 'islands']));
+
+      // cargo, rates, contacts, expenses — ONLY this boat's users. Admin cannot read these.
+      match /{sub}/{docId} {
+        allow read, write: if isMember(boatId);
+      }
+    }
+  }
+}
